@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>W杯2026 みんなのノックアウト予想（5人共有）</title>
-  <meta name="description" content="FIFAワールドカップ2026 ノックアウト表。5人（岡・大・田・片・南）で担当チームをルーレット/手動で決めて、全員でリアルタイム共有。優勝オッズ・国旗付きトーナメント表つき。" />
+  <title>W杯2026 応援ゲーム</title>
+  <meta name="description" content="FIFAワールドカップ2026 応援ゲーム。5人（岡・大・田・片・南）が応援チームを回転ルーレットか手動で1チームずつ（重複なし）決めて、勝ち上がりを全員でリアルタイム共有。" />
   <style>
     :root {
       --bg: #07101f;
@@ -106,7 +106,7 @@
     .section-title h2 { margin: 0; font-size: 20px; letter-spacing: -.025em; }
     .note { color: var(--muted); font-size: 12px; line-height: 1.55; }
 
-    /* ===== みんなの担当チーム（5人プール） ===== */
+    /* ===== みんなの応援チーム（5人） ===== */
     .pool-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
     .pool-me { display:flex; align-items:center; gap:8px; }
     .pool-me label { font-size:12px; color:#c7d3e2; font-weight:800; }
@@ -291,8 +291,8 @@
       <div class="logo-title">
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/2026_FIFA_World_Cup_emblem_(with_wordmark).svg" alt="FIFA World Cup 2026 emblem" />
         <div>
-          <strong>W杯2026 みんなの予想</strong>
-          <small id="topPoolText">担当チーム: 0 / 5 人が選択済み</small>
+          <strong>W杯2026 応援ゲーム</strong>
+          <small id="topPoolText">応援チーム: 0 / 5 人が選択済み</small>
         </div>
       </div>
       <div class="top-actions">
@@ -307,9 +307,9 @@
   <header class="hero">
     <div class="wrap hero-card">
       <div>
-        <div class="eyebrow"><span class="dot"></span> FIFA World Cup 2026 Knockout · 5人共有プール</div>
-        <h1>みんなの<br>担当チーム予想</h1>
-        <p class="lead">岡・大・田・片・南の5人が、それぞれ担当チームを🎰ルーレットか手動で決められます。選んだ内容は全員のブラウザにリアルタイムで共有され、トーナメント表とリーダーボードに反映。更新ボタンで公開スコアから勝者を次ラウンドへ反映します。</p>
+        <div class="eyebrow"><span class="dot"></span> FIFA World Cup 2026 Knockout · 5人の応援ゲーム</div>
+        <h1>W杯2026<br>応援ゲーム</h1>
+        <p class="lead">岡・大・田・片・南の5人が、それぞれ応援チームを🎰ルーレットか手動で決められます。選んだ内容は全員のブラウザにリアルタイムで共有され、トーナメント表とリーダーボードに反映。更新ボタンで公開スコアから勝者を次ラウンドへ反映します。</p>
         <div class="status-strip">
           <span class="pill" id="updatedAt">初期データ: 2026-06-29 11:52 JST</span>
           <span class="pill">反映済み: カナダが南アフリカに1-0で勝利</span>
@@ -322,10 +322,10 @@
   </header>
 
   <main class="wrap">
-    <section class="section panel pool-section" aria-label="5人の担当チーム">
+    <section class="section panel pool-section" aria-label="5人の応援チーム">
       <div class="pool-head">
         <div class="section-title" style="margin-bottom:0">
-          <h2>みんなの担当チーム</h2>
+          <h2>みんなの応援チーム</h2>
           <span class="note">🎰回転ルーレットか手動で、各自1チーム。重複なし・終了済みの2チームは対象外。</span>
         </div>
         <div class="pool-me">
@@ -334,7 +334,7 @@
         </div>
       </div>
       <div class="pool-grid" id="poolGrid"></div>
-      <p class="note" style="margin:12px 0 0">「あなたは？」を選ぶと自分のカードが強調されます。各カードの🎰でルーレット抽選、または右のリストから手動選択。トーナメント表ではあなたの担当チームに色付きのマークが付きます。</p>
+      <p class="note" style="margin:12px 0 0">「あなたは？」を選ぶと自分のカードが強調されます。各カードの🎰でルーレット抽選、または右のリストから手動選択。トーナメント表ではあなたの応援チームに色付きのマークが付きます。</p>
     </section>
 
     <section class="section">
@@ -348,7 +348,7 @@
             <span><i class="key"></i>勝ち上がり / 終了</span>
             <span><i class="key live"></i>ライブ</span>
             <span><i class="key sched"></i>未実施</span>
-            <span><i class="key fav"></i>誰かの担当</span>
+            <span><i class="key fav"></i>誰かの応援</span>
           </div>
           <div class="view-controls">
             <button class="btn secondary" id="viewFit">全体表示</button>
@@ -371,7 +371,7 @@
 
     <section class="section grid-2">
       <div class="panel">
-        <div class="section-title"><h2>担当チームの勝ち上がり</h2><span class="note">勝ち進んでいる順</span></div>
+        <div class="section-title"><h2>応援チームの勝ち上がり</h2><span class="note">勝ち進んでいる順</span></div>
         <div class="leaderboard" id="leaderboard"></div>
       </div>
       <div class="champion-card">
@@ -414,13 +414,13 @@
 
   <footer class="wrap">
     <p>データ初期値: FIFA公式日程、公開スコア情報、2026-06-29時点の勝ち上がり。国旗画像はFlagCDNを使用。大会ロゴ画像はWikimedia Commons上のFIFA World Cup 2026 emblemを参照しています。ブラウザやネットワークのCORS制限により更新が失敗する場合があります。その場合はFIFA公式日程またはESPNブラケットを開いて確認してください。</p>
-    <p id="shareNote">共有について: 5人の担当チームは共有データベースに保存され、同じページを開いた全員にリアルタイムで反映されます。（データベース未設定の場合は、各端末内のみの保存になります）</p>
+    <p id="shareNote">共有について: 5人の応援チームは共有データベースに保存され、同じページを開いた全員にリアルタイムで反映されます。（データベース未設定の場合は、各端末内のみの保存になります）</p>
   </footer>
 
   <div class="roulette-overlay" id="rouletteOverlay">
     <div class="roulette-box">
       <button class="roulette-close" id="rouletteCloseBtn" aria-label="閉じる">×</button>
-      <h3 class="roulette-title" id="rouletteTitle">担当チームを抽選</h3>
+      <h3 class="roulette-title" id="rouletteTitle">応援チームを抽選</h3>
       <div class="wheel-wrap">
         <div class="wheel-pointer"></div>
         <canvas class="roulette-wheel" id="rouletteWheel" width="520" height="520"></canvas>
@@ -643,7 +643,7 @@ function initSupabase(){
   }
 }
 
-/* ===== 担当チームの読み書き ===== */
+/* ===== 応援チームの読み書き ===== */
 function setUserTeam(userId, team, method){
   if(!team || !TEAMS[team] || !userById(userId)) return false;
   if(completedTeamIds().has(team)){ toast(`${TEAMS[team].ja}は終了済みの試合のチームのため選べません。`); return false; }
@@ -701,7 +701,7 @@ function openRoulette(userId){
   const candidates = availableTeamsForPick(userId);
   if(!candidates.length){ toast('選べるチームが残っていません。'); return; }
   const overlay = document.getElementById('rouletteOverlay');
-  document.getElementById('rouletteTitle').textContent = `${u.name} さんの担当チームを抽選`;
+  document.getElementById('rouletteTitle').textContent = `${u.name} さんの応援チームを抽選`;
   document.getElementById('rouletteHint').textContent = `スタートで回転、ストップで決定。残り候補 ${candidates.length} チーム。`;
   document.getElementById('rouletteResult').textContent = 'スタートで回転';
   document.getElementById('rouletteActions').innerHTML = `<button class="btn" onclick="startRoulette()">スタート</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
@@ -790,7 +790,7 @@ function stopRoulette(){
       ? `<img src="${teamObj.flag}" alt="" onerror="this.style.visibility='hidden'">${teamObj.ja}`
       : '指名できませんでした';
     document.getElementById('rouletteHint').textContent = assigned
-      ? `${u.name} さんの担当は ${teamObj.ja} に決定！`
+      ? `${u.name} さんの応援は ${teamObj.ja} に決定！`
       : '候補が更新されました。開き直してください。';
     document.getElementById('rouletteActions').innerHTML = assigned
       ? `<button class="btn" onclick="openRoulette('${uid}')">もう一回</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`
@@ -835,7 +835,7 @@ function fmtJst(iso){
   } catch { return ''; }
 }
 
-/* ===== 5人プール描画 ===== */
+/* ===== 5人の応援チーム描画 ===== */
 function renderPool(){
   const grid = document.getElementById('poolGrid');
   if(!grid) return;
@@ -847,8 +847,8 @@ function renderPool(){
       : `<span class="none">未選択</span>`;
     const avail = availableTeamsForPick(u.id).map(id => TEAMS[id]).sort((a,b) => a.ja.localeCompare(b.ja, 'ja'));
     const opts = `<option value="">手動で選ぶ…</option>` + avail.map(tt => `<option value="${tt.abbr}">${tt.ja}</option>`).join('');
-    const sel = `<select aria-label="${u.name}の担当を選ぶ" onchange="setUserTeam('${u.id}', this.value,'manual'); this.selectedIndex=0;">${opts}</select>`;
-    const clearBtn = t ? `<button class="btn secondary clear" onclick="clearUserTeam('${u.id}')" aria-label="${u.name}の担当を解除">解除</button>` : '';
+    const sel = `<select aria-label="${u.name}の応援を選ぶ" onchange="setUserTeam('${u.id}', this.value,'manual'); this.selectedIndex=0;">${opts}</select>`;
+    const clearBtn = t ? `<button class="btn secondary clear" onclick="clearUserTeam('${u.id}')" aria-label="${u.name}の応援を解除">解除</button>` : '';
     return `<article class="user-card ${me === u.id ? 'me' : ''}" style="--uc:${u.color}">
       <div class="user-head">
         <div class="user-badge">${u.name}</div>
@@ -866,7 +866,7 @@ function renderPool(){
   if(meSel) meSel.value = me;
   const count = USERS.filter(u => picks[u.id]).length;
   const top = document.getElementById('topPoolText');
-  if(top) top.textContent = `担当チーム: ${count} / 5 人が選択済み`;
+  if(top) top.textContent = `応援チーム: ${count} / 5 人が選択済み`;
 }
 
 /* ===== 進捗（リーダーボード用） ===== */
@@ -972,7 +972,7 @@ function teamRow(teamId, slot, match){
   const flag = t ? `<img class="flag-mini" src="${t.flag}" alt="${t.ja} 国旗" onerror="this.style.visibility='hidden'">` : `<span></span>`;
   const dots = isOwned ? `<span class="owner-dots">${owners.map(o => `<i style="background:${o.color}" title="${o.name}"></i>`).join('')}</span>` : '';
   const name = t ? `${t.ja}${dots}<span class="team-code">${t.abbr}</span>` : getPlaceholder(slot);
-  const action = t ? `onclick="pickTeamFromBracket('${teamId}')" title="${t.ja}をあなたの担当にする"` : '';
+  const action = t ? `onclick="pickTeamFromBracket('${teamId}')" title="${t.ja}をあなたの応援にする"` : '';
   const tag = t ? 'button' : 'div';
   return `<${tag} type="button" class="${cls}" ${action}><span class="flag-wrap">${flag}</span><span class="team-name">${name}</span><span class="score">${score === '' ? '—' : score}</span></${tag}>`;
 }
@@ -1180,7 +1180,7 @@ async function copyPageLink(){
   const url = location.href.split('#')[0];
   try {
     await navigator.clipboard.writeText(url);
-    toast('ページのURLをコピーしました。同じURLを開くと全員の担当が共有されます。');
+    toast('ページのURLをコピーしました。同じURLを開くと全員の応援が共有されます。');
   } catch {
     prompt('このURLを共有してください', url);
   }
