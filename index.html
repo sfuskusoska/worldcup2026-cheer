@@ -25,7 +25,7 @@
       --stageH: 1400px;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; }
+    html, body { margin: 0; padding: 0; overflow-x: hidden; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; }
     body {
       min-height: 100vh;
       background:
@@ -235,11 +235,15 @@
     /* ===== ルーレット ===== */
     .roulette-overlay { position: fixed; inset: 0; z-index: 130; display: none; place-items: center; background: rgba(3,9,18,.80); backdrop-filter: blur(6px); padding: 18px; }
     .roulette-overlay.show { display: grid; }
-    .roulette-box { width: min(420px, 100%); background: linear-gradient(180deg, rgba(22,32,54,.97), rgba(10,16,28,.97)); border: 1px solid rgba(255,255,255,.18); border-radius: 24px; padding: 22px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.55); position:relative; }
+    .roulette-box { width: min(420px, calc(100vw - 36px)); background: linear-gradient(180deg, rgba(22,32,54,.97), rgba(10,16,28,.97)); border: 1px solid rgba(255,255,255,.18); border-radius: 24px; padding: 22px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.55); position:relative; }
     .roulette-close { position:absolute; top:12px; right:14px; background:none; border:0; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; }
     .roulette-title { font-weight: 900; font-size: 16px; margin: 0 0 14px; }
-    .roulette-display { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 18px; border-radius: 18px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
-    .roulette-flag { width: 132px; height: 88px; object-fit: cover; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); background: rgba(255,255,255,.08); }
+    .wheel-wrap { position: relative; width: min(300px, 76vw); aspect-ratio: 1; margin: 4px auto 0; }
+    .wheel-wrap canvas { width: 100%; height: 100%; display: block; border-radius: 50%; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+    .wheel-pointer { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-top: 24px solid var(--gold); z-index: 3; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+    .wheel-hub { position: absolute; top: 50%; left: 50%; width: 38px; height: 38px; transform: translate(-50%,-50%); border-radius: 50%; background: #0b1422; border: 3px solid var(--gold); z-index: 2; }
+    .roulette-result { min-height: 36px; margin-top: 14px; font-size: 22px; font-weight: 1000; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .roulette-result img { width: 34px; height: 23px; border-radius: 3px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.2); }
     .roulette-team { font-size: 26px; font-weight: 1000; letter-spacing: -.02em; min-height: 32px; }
     .roulette-actions { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 40px; }
     .roulette-hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
@@ -322,7 +326,7 @@
       <div class="pool-head">
         <div class="section-title" style="margin-bottom:0">
           <h2>みんなの担当チーム</h2>
-          <span class="note">🎰ルーレットでも、手動でも決められます（重複OK）</span>
+          <span class="note">🎰回転ルーレットか手動で、各自1チーム。重複なし・終了済みの2チームは対象外。</span>
         </div>
         <div class="pool-me">
           <label for="meSelect">あなたは？</label>
@@ -417,12 +421,14 @@
     <div class="roulette-box">
       <button class="roulette-close" id="rouletteCloseBtn" aria-label="閉じる">×</button>
       <h3 class="roulette-title" id="rouletteTitle">担当チームを抽選</h3>
-      <div class="roulette-display">
-        <img class="roulette-flag" id="rouletteFlag" src="" alt="" onerror="this.style.visibility='hidden'" />
-        <div class="roulette-team" id="rouletteTeam">準備中…</div>
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <canvas class="roulette-wheel" id="rouletteWheel" width="520" height="520"></canvas>
+        <div class="wheel-hub"></div>
       </div>
+      <div class="roulette-result" id="rouletteResult">準備中…</div>
       <div class="roulette-actions" id="rouletteActions"></div>
-      <p class="roulette-hint" id="rouletteHint">32チームから抽選します。</p>
+      <p class="roulette-hint" id="rouletteHint">残り候補から重複なしで抽選します。</p>
     </div>
   </div>
 
@@ -575,6 +581,8 @@ function loadViewMode(){
 let appState = { viewMode: loadViewMode() };
 let sb = null, dbReady = false, pollTimer = null;
 let rouletteTimer = null;
+let rouletteFrame = null, rouletteState = null;
+const WHEEL_COLORS = ['#ff3b30', '#2f7fbd', '#2cc84d', '#f5c400', '#8a2be2', '#ff7a00', '#16a085', '#e91e63'];
 
 function userById(id){ return USERS.find(u => u.id === id); }
 
@@ -637,7 +645,10 @@ function initSupabase(){
 
 /* ===== 担当チームの読み書き ===== */
 function setUserTeam(userId, team, method){
-  if(!team || !TEAMS[team] || !userById(userId)) return;
+  if(!team || !TEAMS[team] || !userById(userId)) return false;
+  if(completedTeamIds().has(team)){ toast(`${TEAMS[team].ja}は終了済みの試合のチームのため選べません。`); return false; }
+  const otherOwner = USERS.find(u => u.id !== userId && picks[u.id] && picks[u.id].team === team);
+  if(otherOwner){ toast(`${TEAMS[team].ja}は${otherOwner.name}さんが選択済みです（重複なし）。`); return false; }
   const rec = { team, method: method || 'manual', updatedAt: Date.now() };
   picks[userId] = rec;
   if(dbReady && sb){
@@ -647,6 +658,7 @@ function setUserTeam(userId, team, method){
   } else { persistLocal(); }
   renderAll();
   toast(`${userById(userId).name} → ${TEAMS[team].ja} に決定`);
+  return true;
 }
 function clearUserTeam(userId){
   if(!picks[userId]) return;
@@ -664,6 +676,19 @@ function ownersOf(teamId){
   if(!teamId) return [];
   return USERS.filter(u => picks[u.id] && picks[u.id].team === teamId);
 }
+function completedTeamIds(){
+  const set = new Set();
+  Object.values(MATCHES).forEach(m => {
+    if(m.status === 'complete') m.slots.forEach(s => { const t = getSlotTeam(s); if(t) set.add(t); });
+  });
+  return set;
+}
+function availableTeamsForPick(excludeUserId){
+  const done = completedTeamIds();
+  const taken = new Set();
+  USERS.forEach(u => { if(u.id !== excludeUserId && picks[u.id]) taken.add(picks[u.id].team); });
+  return Object.keys(TEAMS).filter(id => !done.has(id) && !taken.has(id));
+}
 function pickTeamFromBracket(teamId){
   if(!teamId || !TEAMS[teamId]) return;
   if(!me){ toast('上の「あなたは？」であなたを選んでから、チームをタップしてください。'); return; }
@@ -673,51 +698,110 @@ function pickTeamFromBracket(teamId){
 /* ===== ルーレット ===== */
 function openRoulette(userId){
   const u = userById(userId); if(!u) return;
+  const candidates = availableTeamsForPick(userId);
+  if(!candidates.length){ toast('選べるチームが残っていません。'); return; }
   const overlay = document.getElementById('rouletteOverlay');
-  const flagEl = document.getElementById('rouletteFlag');
-  const teamEl = document.getElementById('rouletteTeam');
-  const actions = document.getElementById('rouletteActions');
   document.getElementById('rouletteTitle').textContent = `${u.name} さんの担当チームを抽選`;
-  document.getElementById('rouletteHint').textContent = '32チームから抽選中…';
-  actions.innerHTML = '';
-  teamEl.style.color = '';
+  document.getElementById('rouletteHint').textContent = `スタートで回転、ストップで決定。残り候補 ${candidates.length} チーム。`;
+  document.getElementById('rouletteResult').textContent = 'スタートで回転';
+  document.getElementById('rouletteActions').innerHTML = `<button class="btn" onclick="startRoulette()">スタート</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
   overlay.classList.add('show');
   overlay.dataset.user = userId;
-  overlay.removeAttribute('data-team');
-
-  const keys = Object.keys(TEAMS);
-  const finalTeam = keys[Math.floor(Math.random() * keys.length)];
-  let elapsed = 0, interval = 55;
-  const duration = 2600;
-  clearTimeout(rouletteTimer);
-  (function tick(){
-    const rt = TEAMS[keys[Math.floor(Math.random() * keys.length)]];
-    flagEl.style.visibility = 'visible';
-    flagEl.src = rt.flag; teamEl.textContent = rt.ja;
-    elapsed += interval;
-    if(elapsed >= duration){
-      const ft = TEAMS[finalTeam];
-      flagEl.src = ft.flag; teamEl.textContent = ft.ja;
-      teamEl.style.color = 'var(--gold)';
-      overlay.dataset.team = finalTeam;
-      document.getElementById('rouletteHint').textContent = `${u.name} さんの担当は ${ft.ja} に決定！`;
-      actions.innerHTML =
-        `<button class="btn" onclick="confirmRoulette()">この担当で決定</button>` +
-        `<button class="btn secondary" onclick="openRoulette('${userId}')">もう一回</button>`;
-      return;
-    }
-    if(elapsed > duration * 0.62) interval += 20;
-    rouletteTimer = setTimeout(tick, interval);
-  })();
+  if(rouletteFrame) cancelAnimationFrame(rouletteFrame);
+  rouletteState = { userId, candidates, rotation: Math.random() * Math.PI * 2, spinning: false, finalTeam: null, finalIndex: -1 };
+  drawRouletteWheel(candidates, rouletteState.rotation);
 }
-function confirmRoulette(){
-  const overlay = document.getElementById('rouletteOverlay');
-  const userId = overlay.dataset.user, team = overlay.dataset.team;
-  if(userId && team) setUserTeam(userId, team, 'roulette');
-  closeRoulette();
+function drawRouletteWheel(candidateIds, rotation){
+  const canvas = document.getElementById('rouletteWheel');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 8;
+  ctx.clearRect(0, 0, w, h);
+  if(!candidateIds.length) return;
+  const seg = Math.PI * 2 / candidateIds.length;
+  const many = candidateIds.length;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+  candidateIds.forEach((id, i) => {
+    const start = i * seg - Math.PI / 2;
+    const team = TEAMS[id];
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r, start, start + seg);
+    ctx.closePath();
+    ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.38)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.save();
+    ctx.rotate(start + seg / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = (many > 18 ? '700 14px' : many > 10 ? '700 18px' : '800 22px') + ' system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,.4)';
+    ctx.shadowBlur = 5;
+    ctx.fillText(many > 16 ? team.abbr : team.ja, r - 16, 0, r * 0.6);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+function startRoulette(){
+  if(!rouletteState || rouletteState.spinning) return;
+  const candidates = rouletteState.candidates;
+  rouletteState.finalIndex = Math.floor(Math.random() * candidates.length);
+  rouletteState.finalTeam = candidates[rouletteState.finalIndex];
+  rouletteState.spinning = true;
+  document.getElementById('rouletteResult').textContent = '回転中…';
+  document.getElementById('rouletteHint').textContent = 'ストップで止めて決定します。';
+  document.getElementById('rouletteActions').innerHTML = `<button class="btn warn" onclick="stopRoulette()">ストップ</button>`;
+  const spin = () => {
+    if(!rouletteState || !rouletteState.spinning) return;
+    rouletteState.rotation += 0.32;
+    drawRouletteWheel(rouletteState.candidates, rouletteState.rotation);
+    rouletteFrame = requestAnimationFrame(spin);
+  };
+  rouletteFrame = requestAnimationFrame(spin);
+}
+function stopRoulette(){
+  if(!rouletteState || !rouletteState.spinning) return;
+  rouletteState.spinning = false;
+  if(rouletteFrame) cancelAnimationFrame(rouletteFrame);
+  const seg = Math.PI * 2 / rouletteState.candidates.length;
+  const current = rouletteState.rotation;
+  let target = -(rouletteState.finalIndex + 0.5) * seg;
+  while(target < current + Math.PI * 6) target += Math.PI * 2;
+  const start = current, diff = target - start, duration = 1500, started = Date.now();
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const uid = rouletteState.userId;
+  const settle = () => {
+    const t = Math.min(1, (Date.now() - started) / duration);
+    rouletteState.rotation = start + diff * ease(t);
+    drawRouletteWheel(rouletteState.candidates, rouletteState.rotation);
+    if(t < 1){ rouletteFrame = requestAnimationFrame(settle); return; }
+    const team = rouletteState.finalTeam;
+    const teamObj = TEAMS[team];
+    const u = userById(uid);
+    const assigned = setUserTeam(uid, team, 'roulette');
+    document.getElementById('rouletteResult').innerHTML = assigned
+      ? `<img src="${teamObj.flag}" alt="" onerror="this.style.visibility='hidden'">${teamObj.ja}`
+      : '指名できませんでした';
+    document.getElementById('rouletteHint').textContent = assigned
+      ? `${u.name} さんの担当は ${teamObj.ja} に決定！`
+      : '候補が更新されました。開き直してください。';
+    document.getElementById('rouletteActions').innerHTML = assigned
+      ? `<button class="btn" onclick="openRoulette('${uid}')">もう一回</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`
+      : `<button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
+  };
+  settle();
 }
 function closeRoulette(){
   clearTimeout(rouletteTimer);
+  if(rouletteFrame) cancelAnimationFrame(rouletteFrame);
+  rouletteState = null;
   document.getElementById('rouletteOverlay').classList.remove('show');
 }
 
@@ -755,14 +839,14 @@ function fmtJst(iso){
 function renderPool(){
   const grid = document.getElementById('poolGrid');
   if(!grid) return;
-  const teams = Object.values(TEAMS).sort((a,b) => a.ja.localeCompare(b.ja, 'ja'));
-  const opts = `<option value="">手動で選ぶ…</option>` + teams.map(t => `<option value="${t.abbr}">${t.ja}</option>`).join('');
   grid.innerHTML = USERS.map(u => {
     const p = picks[u.id];
     const t = p && TEAMS[p.team];
     const teamHtml = t
       ? `<img src="${t.flag}" alt="" onerror="this.style.visibility='hidden'">${t.ja}<span class="mb">${p.method === 'roulette' ? '🎰' : '✏️'}</span>`
       : `<span class="none">未選択</span>`;
+    const avail = availableTeamsForPick(u.id).map(id => TEAMS[id]).sort((a,b) => a.ja.localeCompare(b.ja, 'ja'));
+    const opts = `<option value="">手動で選ぶ…</option>` + avail.map(tt => `<option value="${tt.abbr}">${tt.ja}</option>`).join('');
     const sel = `<select aria-label="${u.name}の担当を選ぶ" onchange="setUserTeam('${u.id}', this.value,'manual'); this.selectedIndex=0;">${opts}</select>`;
     const clearBtn = t ? `<button class="btn secondary clear" onclick="clearUserTeam('${u.id}')" aria-label="${u.name}の担当を解除">解除</button>` : '';
     return `<article class="user-card ${me === u.id ? 'me' : ''}" style="--uc:${u.color}">
