@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>W杯2026 応援ゲーム</title>
-  <meta name="description" content="FIFAワールドカップ2026 応援ゲーム。5人（岡・大・田・片・南）が応援チームを回転ルーレットか手動で1チームずつ（重複なし）決めて、勝ち上がりを全員でリアルタイム共有。" />
+  <meta name="description" content="FIFAワールドカップ2026 応援ゲーム。5人（岡・大・田・片・南）に6チームずつ配分し、勝利チーム1勝につき1ポイントで応援ポイントを競うトーナメント表。" />
   <style>
     :root {
       --bg: #07101f;
@@ -68,6 +68,13 @@
       box-shadow: none;
       border: 1px solid rgba(255,255,255,.13);
     }
+    .btn.audio.playing {
+      background: rgba(247,201,72,.18);
+      color: #ffe9ab;
+      box-shadow: none;
+      border: 1px solid rgba(247,201,72,.28);
+    }
+    .btn.audio.loading { opacity: .72; }
     .btn.warn { background: rgba(255,209,102,.16); color: #ffe9ab; box-shadow: none; border: 1px solid rgba(255,209,102,.22); }
     .btn:disabled { opacity: .55; cursor: default; }
     header.hero { padding: 18px 0 8px; }
@@ -125,10 +132,17 @@
     .user-badge { width:34px; height:34px; border-radius:12px; display:grid; place-items:center; font-weight:1000; font-size:16px; background: var(--uc); color:#04121d; flex:0 0 auto; }
     .user-name { font-weight:900; font-size:15px; }
     .user-name .you { font-size:10px; color:var(--muted); margin-left:4px; }
-    .user-team { display:flex; align-items:center; gap:8px; min-height:30px; font-weight:900; font-size:15px; }
-    .user-team img { width:28px; height:19px; border-radius:3px; object-fit:cover; box-shadow:0 0 0 1px rgba(255,255,255,.18); flex:0 0 auto; }
-    .user-team .none { color:var(--muted); font-weight:600; font-size:13px; }
-    .user-team .mb { font-size:11px; color:var(--muted); font-weight:700; }
+    .user-team-grid { display:grid; gap:7px; }
+    .team-chip { display:grid; grid-template-columns: 26px minmax(0,1fr) auto; align-items:center; gap:7px; min-height:34px; padding:7px 8px; border-radius:12px; background: rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.10); font-size:13px; font-weight:850; }
+    .team-chip img { width:24px; height:16px; border-radius:3px; object-fit:cover; box-shadow:0 0 0 1px rgba(255,255,255,.18); }
+    .team-chip .chip-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .team-chip b { font-size:11px; padding:3px 6px; border-radius:999px; color:#10202b; background: rgba(255,255,255,.72); }
+    .team-chip.alive { border-color: rgba(20,212,165,.24); background: rgba(20,212,165,.08); }
+    .team-chip.out { opacity:.58; }
+    .team-chip.champ { border-color: rgba(247,201,72,.42); background: rgba(247,201,72,.14); }
+    .team-chip.wait { color:#dce6f2; }
+    .user-total { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:auto; padding-top:2px; color:#e9f4ff; font-size:13px; font-weight:900; }
+    .user-total strong { font-size:18px; color:#fff; }
     .user-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
     .user-actions .btn { padding:8px 10px; font-size:12px; }
     .user-actions select { width:auto; flex:1 1 110px; min-width:96px; padding:8px 9px; font-size:12px; border-radius:11px; }
@@ -150,10 +164,10 @@
     .leaderboard { display:grid; gap:8px; }
     .lb-row { display:grid; grid-template-columns: 30px minmax(0,1fr) auto; gap:10px; align-items:center; padding:10px 11px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); }
     .lb-user { width:28px; height:28px; border-radius:9px; display:grid; place-items:center; font-weight:1000; font-size:13px; color:#04121d; }
-    .lb-team { display:flex; align-items:center; gap:8px; font-weight:800; min-width:0; }
-    .lb-team img { width:24px; height:16px; border-radius:3px; object-fit:cover; box-shadow:0 0 0 1px rgba(255,255,255,.18); flex:0 0 auto; }
-    .lb-team span.tname { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lb-team .none { color:var(--muted); font-weight:600; }
+    .lb-main { min-width:0; }
+    .lb-name { font-weight:900; margin-bottom:3px; }
+    .lb-detail { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lb-points { font-size:13px; font-weight:1000; padding:6px 10px; border-radius:999px; white-space:nowrap; background: rgba(247,201,72,.18); color:#ffe29a; border:1px solid rgba(247,201,72,.22); }
     .lb-status { font-size:12px; font-weight:900; padding:5px 10px; border-radius:999px; white-space:nowrap; }
     .lb-status.alive { background: rgba(20,212,165,.18); color:#9affdf; }
     .lb-status.out { background: rgba(255,111,142,.16); color:#ffb3c4; }
@@ -166,7 +180,10 @@
     .legend span { display:inline-flex; align-items:center; gap:6px; padding:6px 8px; border-radius:999px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); }
     .key { width: 9px; height: 9px; border-radius:50%; background: var(--accent); }
     .key.live { background: var(--danger); }
+    .key.today { background: var(--gold); }
+    .key.soon { background: var(--accent2); }
     .key.sched { background: var(--accent2); }
+    .key.done { background: var(--accent); }
     .key.fav { background: var(--favorite); }
     .view-controls { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center; }
     .view-controls button { padding: 7px 10px; font-size: 12px; }
@@ -188,7 +205,13 @@
       z-index: 2;
     }
     .match-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background: rgba(74,163,255,.72); }
+    .match-card.soon { background: linear-gradient(180deg, rgba(74,163,255,.20), rgba(255,255,255,.07)); border-color: rgba(74,163,255,.38); }
+    .match-card.today { background: linear-gradient(180deg, rgba(247,201,72,.24), rgba(255,209,102,.08)); border-color: rgba(247,201,72,.52); }
+    .match-card.complete { background: linear-gradient(180deg, rgba(20,212,165,.18), rgba(255,255,255,.06)); }
+    .match-card.live { background: linear-gradient(180deg, rgba(255,111,142,.26), rgba(255,255,255,.07)); border-color: rgba(255,111,142,.62); }
     .match-card.complete::before { background: var(--accent); }
+    .match-card.soon::before { background: var(--accent2); }
+    .match-card.today::before { background: var(--gold); box-shadow: 0 0 18px rgba(247,201,72,.42); }
     .match-card.live::before { background: var(--danger); box-shadow: 0 0 18px var(--danger); }
     .match-card.has-owner { border-color: rgba(255,209,102,.58); box-shadow: 0 0 0 2px rgba(255,209,102,.12), 0 10px 26px rgba(0,0,0,.22); }
     .match-meta { display:flex; justify-content:space-between; align-items:center; gap:7px; padding:4px 7px 3px 10px; color: var(--muted); font-size: 10px; height: 21px; border-bottom:1px solid rgba(255,255,255,.08); }
@@ -196,7 +219,7 @@
     .match-meta span:nth-child(2) { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.09); color:#d8e6f5; font-size: 9px; }
     .teams { padding: 4px 6px 6px 10px; display:grid; gap:2px; }
-    .team-row { display:grid; grid-template-columns: 22px minmax(0,1fr) 27px; gap:6px; align-items:center; min-height: 18px; border-radius: 8px; padding: 1px 3px 1px 0; color: inherit; background: transparent; border:0; text-align:left; cursor:pointer; }
+    .team-row { display:grid; grid-template-columns: 22px minmax(0,1fr) 27px; gap:6px; align-items:center; min-height: 18px; border-radius: 8px; padding: 1px 3px 1px 0; color: inherit; background: transparent; border:0; text-align:left; cursor:default; }
     .team-row.winner { background: rgba(20,212,165,.18); color: #f7fffc; font-weight: 900; }
     .team-row.loser { opacity: .52; }
     .team-row.tbd { color: #b9c4d2; cursor: default; }
@@ -228,6 +251,10 @@
     .small-schedule { display:grid; gap: 8px; }
     .mini-match { display:flex; justify-content:space-between; gap:10px; padding: 10px; border-radius: 14px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color:#dfeaf7; font-size:13px; }
     .mini-match.owned { border-color: rgba(255,209,102,.35); background: rgba(255,209,102,.09); }
+    .mini-match.soon { background: rgba(74,163,255,.10); border-color: rgba(74,163,255,.28); }
+    .mini-match.today { background: rgba(247,201,72,.13); border-color: rgba(247,201,72,.34); }
+    .mini-match.live { background: rgba(255,111,142,.13); border-color: rgba(255,111,142,.38); }
+    .mini-match.complete { background: rgba(20,212,165,.10); border-color: rgba(20,212,165,.28); }
     footer { color: var(--muted); padding: 24px 0 40px; font-size: 12px; line-height: 1.7; }
     .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 99; width: min(460px, calc(100% - 32px)); padding: 13px 15px; border-radius: 16px; background: rgba(6,15,28,.94); border: 1px solid rgba(255,255,255,.18); box-shadow: 0 20px 50px rgba(0,0,0,.35); color:#eaf4ff; display:none; text-align:center; }
     .toast.show { display: block; }
@@ -283,6 +310,15 @@
       .stage-viewport { overflow: visible; }
       .stage-scroll { transform: scale(.62) !important; transform-origin: top left; }
     }
+    /* === 配分エディタ === */
+    .team-chip { position: relative; }
+    .chip-x { position:absolute; top:-7px; right:-7px; width:20px; height:20px; border-radius:50%; border:1px solid rgba(255,255,255,.35); background:#5a1226; color:#ffe3ea; font-weight:900; font-size:13px; line-height:1; cursor:pointer; display:grid; place-items:center; box-shadow:0 2px 6px rgba(0,0,0,.4); }
+    .add-team { width:100%; margin-top:6px; padding:8px 10px; border-radius:11px; font-size:12px; }
+    .ucount { font-size:11px; color:var(--muted); margin-left:6px; font-weight:800; }
+    .edit-bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 0; padding:10px 12px; border:1px dashed rgba(255,209,102,.45); border-radius:14px; background:rgba(255,209,102,.07); }
+    .edit-bar .note { flex:1 1 220px; }
+    .edit-bar .btn { padding:7px 11px; font-size:12px; }
+    #editToggleBtn { white-space:nowrap; }
   </style>
 </head>
 <body>
@@ -292,11 +328,12 @@
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/2026_FIFA_World_Cup_emblem_(with_wordmark).svg" alt="FIFA World Cup 2026 emblem" />
         <div>
           <strong>W杯2026 応援ゲーム</strong>
-          <small id="topPoolText">応援チーム: 0 / 5 人が選択済み</small>
+          <small id="topPoolText">配分済み: 0 / 30 チーム</small>
         </div>
       </div>
       <div class="top-actions">
-        <span class="sync-badge off" id="syncBadge">読み込み中…</span>
+        <span class="sync-badge on" id="syncBadge">固定配分</span>
+        <button class="btn secondary audio" id="bgmBtn" aria-pressed="false" title="試合前BGMを再生/停止">♪ BGM</button>
         <button class="btn" id="refreshBtn">🔄 最新結果で更新</button>
         <button class="btn secondary" id="fitBtn">全体表示</button>
         <button class="btn warn" id="copyShareBtn">ページ共有</button>
@@ -309,7 +346,7 @@
       <div>
         <div class="eyebrow"><span class="dot"></span> FIFA World Cup 2026 Knockout · 5人の応援ゲーム</div>
         <h1>W杯2026<br>応援ゲーム</h1>
-        <p class="lead">岡・大・田・片・南の5人が、それぞれ応援チームを🎰ルーレットか手動で決められます。選んだ内容は全員のブラウザにリアルタイムで共有され、トーナメント表とリーダーボードに反映。更新ボタンで公開スコアから勝者を次ラウンドへ反映します。</p>
+        <p class="lead">岡・大・田・片・南の5人に30チームを6チームずつ配分。応援チームが試合に勝つたびに持ち主へ1ポイント入り、トーナメント表とリーダーボードに反映されます。配分はホスト設定固定で、ルーレットは遊び用に残しています。</p>
         <div class="status-strip">
           <span class="pill" id="updatedAt">初期データ: 2026-06-29 11:52 JST</span>
           <span class="pill">反映済み: カナダが南アフリカに1-0で勝利</span>
@@ -326,15 +363,23 @@
       <div class="pool-head">
         <div class="section-title" style="margin-bottom:0">
           <h2>みんなの応援チーム</h2>
-          <span class="note">🎰回転ルーレットか手動で、各自1チーム。重複なし・終了済みの2チームは対象外。</span>
+          <span class="note">30チームを5人へ各6チームずつ。「配分を編集」で自分で選べます（重複不可・終了済み2チームは対象外）。</span>
         </div>
+        <button class="btn" id="editToggleBtn" onclick="toggleEdit()">✏️ 配分を編集</button>
+        <button class="btn secondary" onclick="openRoulette()">🎰 遊びルーレット</button>
         <div class="pool-me">
-          <label for="meSelect">あなたは？</label>
+          <label for="meSelect">強調表示</label>
           <select id="meSelect"></select>
         </div>
       </div>
       <div class="pool-grid" id="poolGrid"></div>
-      <p class="note" style="margin:12px 0 0">「あなたは？」を選ぶと自分のカードが強調されます。各カードの🎰でルーレット抽選、または右のリストから手動選択。トーナメント表ではあなたの応援チームに色付きのマークが付きます。</p>
+      <div class="edit-bar" id="editBar" style="display:none">
+        <span class="note">編集中：各カードでチームを追加／× で削除。重複不可・各自6チーム。終了済み2チームは選べません。</span>
+        <button class="btn secondary" onclick="resetAssignments()">初期配分に戻す</button>
+        <button class="btn warn" onclick="clearAssignments()">全消去</button>
+        <button class="btn" onclick="shareAssignments()">この配分を共有</button>
+      </div>
+      <p class="note" style="margin:12px 0 0">自分の名前を選ぶと、そのカードだけ強調表示できます。応援チームが勝つたびに1ポイント。トーナメント表では配分済みチームに持ち主カラーのマークが付きます。</p>
     </section>
 
     <section class="section">
@@ -345,9 +390,11 @@
       <div class="bracket-shell" id="bracketShell">
         <div class="bracket-head">
           <div class="legend">
-            <span><i class="key"></i>勝ち上がり / 終了</span>
+            <span><i class="key"></i>通常予定</span>
+            <span><i class="key soon"></i>3日以内</span>
+            <span><i class="key today"></i>24時間以内</span>
             <span><i class="key live"></i>ライブ</span>
-            <span><i class="key sched"></i>未実施</span>
+            <span><i class="key done"></i>終了</span>
             <span><i class="key fav"></i>誰かの応援</span>
           </div>
           <div class="view-controls">
@@ -371,7 +418,7 @@
 
     <section class="section grid-2">
       <div class="panel">
-        <div class="section-title"><h2>応援チームの勝ち上がり</h2><span class="note">勝ち進んでいる順</span></div>
+        <div class="section-title"><h2>応援ポイント</h2><span class="note">1勝 = 1ポイント</span></div>
         <div class="leaderboard" id="leaderboard"></div>
       </div>
       <div class="champion-card">
@@ -414,13 +461,13 @@
 
   <footer class="wrap">
     <p>データ初期値: FIFA公式日程、公開スコア情報、2026-06-29時点の勝ち上がり。国旗画像はFlagCDNを使用。大会ロゴ画像はWikimedia Commons上のFIFA World Cup 2026 emblemを参照しています。ブラウザやネットワークのCORS制限により更新が失敗する場合があります。その場合はFIFA公式日程またはESPNブラケットを開いて確認してください。</p>
-    <p id="shareNote">共有について: 5人の応援チームは共有データベースに保存され、同じページを開いた全員にリアルタイムで反映されます。（データベース未設定の場合は、各端末内のみの保存になります）</p>
+    <p id="shareNote">共有について: 配分はページ内の設定として固定表示されます。リアルタイム入力や共有データベースは使いません。配分を変更したい場合はホストが設定を更新して再公開します。</p>
   </footer>
 
   <div class="roulette-overlay" id="rouletteOverlay">
     <div class="roulette-box">
       <button class="roulette-close" id="rouletteCloseBtn" aria-label="閉じる">×</button>
-      <h3 class="roulette-title" id="rouletteTitle">応援チームを抽選</h3>
+      <h3 class="roulette-title" id="rouletteTitle">遊びルーレット</h3>
       <div class="wheel-wrap">
         <div class="wheel-pointer"></div>
         <canvas class="roulette-wheel" id="rouletteWheel" width="520" height="520"></canvas>
@@ -428,24 +475,29 @@
       </div>
       <div class="roulette-result" id="rouletteResult">準備中…</div>
       <div class="roulette-actions" id="rouletteActions"></div>
-      <p class="roulette-hint" id="rouletteHint">残り候補から重複なしで抽選します。</p>
+      <p class="roulette-hint" id="rouletteHint">配分には反映しない遊び用です。</p>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =========================================================================
-   Supabase 設定（あなたのプロジェクトの URL と anon キーをここに貼り付け）
-   - https://supabase.com → プロジェクト → Settings → API
-   - 両方とも空のままだと「端末内保存（オフライン）」で動作します。
-   - anon キーは公開用なので、ページに埋め込んでも問題ありません。
+   応援チームの配分（ホストがここで決めます）
+   - 終了済みの試合の2チーム（RSA/CAN）を除く30チームを、5人へ6チームずつ。
+   - 配分を変えたいときは、この ASSIGNMENTS の中身を入れ替えるだけ。
+     （ページに埋め込まれるので、保存したURLを開いた全員に同じ配分が表示されます）
+   - 下の初期値は実力均等（各人気帯から1チームずつ）のたたき台です。自由に変更可。
    ========================================================================= */
-const SUPABASE_URL = "";
-const SUPABASE_ANON_KEY = "";
-/* 共有テーブル名（複数グループで分けたい場合はここを変える） */
-const PICKS_TABLE = "wc2026_picks";
+const DEFAULT_ASSIGNMENTS = {
+  oka:    ['FRA','GER','USA','SEN','NOR','GHA'],
+  dai:    ['ARG','POR','MEX','JPN','AUS','COD'],
+  ta:     ['ESP','NED','MAR','ECU','EGY','PAR'],
+  kata:   ['ENG','BEL','SUI','AUT','DZA','BIH'],
+  minami: ['BRA','CRO','COL','SWE','CIV','CPV']
+};
+let ASSIGNMENTS = DEFAULT_ASSIGNMENTS;   /* UI編集／共有URL／localStorage で上書きされます */
+let editMode = false;
 
 /* 5人の固定ユーザー（名前や色はここで自由に変更できます） */
 const USERS = [
@@ -560,7 +612,6 @@ const ROUND_JA = { r32:'ラウンド32', r16:'ベスト16', qf:'ベスト8', sf:
 const NEXT_JA = { r32:'ベスト16', r16:'ベスト8', qf:'ベスト4', sf:'決勝' };
 
 /* ===== 状態 ===== */
-let picks = {};                                  // { userId: {team, method, updatedAt} }
 let me = '';
 try { me = localStorage.getItem('wc2026Me') || ''; } catch {}
 function defaultViewMode(){
@@ -579,136 +630,87 @@ function loadViewMode(){
   } catch { return fallback; }
 }
 let appState = { viewMode: loadViewMode() };
-let sb = null, dbReady = false, pollTimer = null;
 let rouletteTimer = null;
 let rouletteFrame = null, rouletteState = null;
 const WHEEL_COLORS = ['#ff3b30', '#2f7fbd', '#2cc84d', '#f5c400', '#8a2be2', '#ff7a00', '#16a085', '#e91e63'];
 
 function userById(id){ return USERS.find(u => u.id === id); }
 
-/* ===== Supabase（共有DB） ===== */
-function setSyncBadge(state, text){
-  const b = document.getElementById('syncBadge');
-  if(!b) return;
-  b.className = 'sync-badge ' + (state === 'on' ? 'on' : 'off');
-  b.textContent = text;
-}
-function loadLocalPicks(){
-  try { picks = JSON.parse(localStorage.getItem('wc2026Picks') || '{}') || {}; } catch { picks = {}; }
-}
-function persistLocal(){
-  try { localStorage.setItem('wc2026Picks', JSON.stringify(picks)); } catch {}
-}
-function rowsToPicks(rows){
-  const out = {};
-  (rows || []).forEach(r => {
-    if(r && r.user_id && r.team) out[r.user_id] = { team: r.team, method: r.method || 'manual', updatedAt: r.updated_at ? Date.parse(r.updated_at) : Date.now() };
-  });
-  return out;
-}
-async function fetchPicks(){
-  if(!sb) return;
-  try {
-    const { data, error } = await sb.from(PICKS_TABLE).select('*');
-    if(error){ setSyncBadge('off', '同期エラー / 端末内保存'); return; }
-    picks = rowsToPicks(data);
-    setSyncBadge('on', '全員と同期中');
-    renderAll();
-  } catch (e) { setSyncBadge('off', '同期エラー / 端末内保存'); }
-}
-function initSupabase(){
-  const hasConfig = SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined';
-  if(!hasConfig){
-    dbReady = false;
-    loadLocalPicks();
-    setSyncBadge('off', '端末内保存（DB未設定）');
-    return;
-  }
-  try {
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    dbReady = true;
-    setSyncBadge('on', '接続中…');
-    fetchPicks();
-    try {
-      sb.channel('wc2026-picks')
-        .on('postgres_changes', { event: '*', schema: 'public', table: PICKS_TABLE }, () => fetchPicks())
-        .subscribe();
-    } catch (e) {}
-    clearInterval(pollTimer);
-    pollTimer = setInterval(fetchPicks, 5000);
-  } catch (e) {
-    dbReady = false;
-    loadLocalPicks();
-    setSyncBadge('off', '端末内保存（接続失敗）');
-  }
-}
-
-/* ===== 応援チームの読み書き ===== */
-function setUserTeam(userId, team, method){
-  if(!team || !TEAMS[team] || !userById(userId)) return false;
-  if(completedTeamIds().has(team)){ toast(`${TEAMS[team].ja}は終了済みの試合のチームのため選べません。`); return false; }
-  const otherOwner = USERS.find(u => u.id !== userId && picks[u.id] && picks[u.id].team === team);
-  if(otherOwner){ toast(`${TEAMS[team].ja}は${otherOwner.name}さんが選択済みです（重複なし）。`); return false; }
-  const rec = { team, method: method || 'manual', updatedAt: Date.now() };
-  picks[userId] = rec;
-  if(dbReady && sb){
-    sb.from(PICKS_TABLE)
-      .upsert({ user_id: userId, team, method: rec.method, updated_at: new Date(rec.updatedAt).toISOString() }, { onConflict: 'user_id' })
-      .then(({ error }) => { if(error) toast('保存に失敗しました: ' + error.message); });
-  } else { persistLocal(); }
-  renderAll();
-  toast(`${userById(userId).name} → ${TEAMS[team].ja} に決定`);
-  return true;
-}
-function clearUserTeam(userId){
-  if(!picks[userId]) return;
-  delete picks[userId];
-  if(dbReady && sb){ sb.from(PICKS_TABLE).delete().eq('user_id', userId).then(() => {}); }
-  else { persistLocal(); }
-  renderAll();
-}
+/* ===== 配分・得点（1勝=1点。配分は上の ASSIGNMENTS） ===== */
+const FINISHED_TEAM_IDS = new Set(['RSA', 'CAN']);
+function assignableTeamIds(){ return Object.keys(TEAMS).filter(id => !FINISHED_TEAM_IDS.has(id)); }
+function getUserTeams(userId){ return (ASSIGNMENTS[userId] || []).filter(id => TEAMS[id]); }
+function assignedTeamIds(){ return USERS.flatMap(u => getUserTeams(u.id)); }
+function ownerOf(teamId){ return teamId ? (USERS.find(u => getUserTeams(u.id).includes(teamId)) || null) : null; }
+function ownersOf(teamId){ return teamId ? USERS.filter(u => getUserTeams(u.id).includes(teamId)) : []; }
+function winCount(teamId){ return teamId ? Object.values(MATCHES).filter(m => m.winner === teamId).length : 0; }
+function userPoints(userId){ return getUserTeams(userId).reduce((s, id) => s + winCount(id), 0); }
 function setMe(v){
   me = v || '';
   try { localStorage.setItem('wc2026Me', me); } catch {}
   renderPool();
 }
-function ownersOf(teamId){
-  if(!teamId) return [];
-  return USERS.filter(u => picks[u.id] && picks[u.id].team === teamId);
-}
-function completedTeamIds(){
-  const set = new Set();
-  Object.values(MATCHES).forEach(m => {
-    if(m.status === 'complete') m.slots.forEach(s => { const t = getSlotTeam(s); if(t) set.add(t); });
+
+/* ===== 配分の編集・保存・共有（ホストが自分で選べます） ===== */
+function sanitizeAssign(obj){
+  const out = {}; const seen = new Set();
+  USERS.forEach(u => {
+    out[u.id] = [];
+    (((obj && obj[u.id]) || [])).forEach(id => {
+      if(TEAMS[id] && !FINISHED_TEAM_IDS.has(id) && !seen.has(id) && out[u.id].length < 6){ out[u.id].push(id); seen.add(id); }
+    });
   });
-  return set;
+  return out;
 }
-function availableTeamsForPick(excludeUserId){
-  const done = completedTeamIds();
-  const taken = new Set();
-  USERS.forEach(u => { if(u.id !== excludeUserId && picks[u.id]) taken.add(picks[u.id].team); });
-  return Object.keys(TEAMS).filter(id => !done.has(id) && !taken.has(id));
+function loadAssignments(){
+  try { const h = new URLSearchParams(location.hash.slice(1)).get('a'); if(h) return sanitizeAssign(JSON.parse(atob(h))); } catch {}
+  try { const s = localStorage.getItem('wc2026Assign'); if(s) return sanitizeAssign(JSON.parse(s)); } catch {}
+  return sanitizeAssign(DEFAULT_ASSIGNMENTS);
 }
-function pickTeamFromBracket(teamId){
-  if(!teamId || !TEAMS[teamId]) return;
-  if(!me){ toast('上の「あなたは？」であなたを選んでから、チームをタップしてください。'); return; }
-  setUserTeam(me, teamId, 'manual');
+function saveAssignments(){ try { localStorage.setItem('wc2026Assign', JSON.stringify(ASSIGNMENTS)); } catch {} }
+function assignedSet(){ const s = new Set(); USERS.forEach(u => getUserTeams(u.id).forEach(t => s.add(t))); return s; }
+function unassignedTeams(){
+  const s = assignedSet();
+  return assignableTeamIds().filter(id => !s.has(id)).sort((a,b) => TEAMS[a].ja.localeCompare(TEAMS[b].ja, 'ja'));
+}
+function addTeam(userId, teamId){
+  if(!teamId || !TEAMS[teamId] || FINISHED_TEAM_IDS.has(teamId) || !userById(userId)) return;
+  if(assignedSet().has(teamId)){ toast(`${TEAMS[teamId].ja}は配分済みです（重複不可）。`); return; }
+  if(getUserTeams(userId).length >= 6){ toast(`${userById(userId).name}さんは既に6チームです。`); return; }
+  ASSIGNMENTS[userId] = [...getUserTeams(userId), teamId];
+  saveAssignments(); renderAll();
+}
+function removeTeam(userId, teamId){
+  if(!userById(userId)) return;
+  ASSIGNMENTS[userId] = getUserTeams(userId).filter(t => t !== teamId);
+  saveAssignments(); renderAll();
+}
+function clearAssignments(){ USERS.forEach(u => { ASSIGNMENTS[u.id] = []; }); saveAssignments(); renderAll(); toast('配分を全消去しました。'); }
+function resetAssignments(){ ASSIGNMENTS = sanitizeAssign(DEFAULT_ASSIGNMENTS); saveAssignments(); renderAll(); toast('初期配分に戻しました。'); }
+function toggleEdit(){
+  editMode = !editMode;
+  const bar = document.getElementById('editBar'); if(bar) bar.style.display = editMode ? 'flex' : 'none';
+  const btn = document.getElementById('editToggleBtn'); if(btn) btn.textContent = editMode ? '✓ 編集を終了' : '✏️ 配分を編集';
+  renderPool();
+}
+async function shareAssignments(){
+  const url = location.href.split('#')[0] + '#a=' + btoa(JSON.stringify(ASSIGNMENTS));
+  try { await navigator.clipboard.writeText(url); toast('この配分の共有URLをコピーしました。開いた人に同じ配分が表示されます。'); }
+  catch { prompt('この配分の共有URL', url); }
 }
 
 /* ===== ルーレット ===== */
-function openRoulette(userId){
-  const u = userById(userId); if(!u) return;
-  const candidates = availableTeamsForPick(userId);
+function openRoulette(){
+  const candidates = assignableTeamIds();
   if(!candidates.length){ toast('選べるチームが残っていません。'); return; }
   const overlay = document.getElementById('rouletteOverlay');
-  document.getElementById('rouletteTitle').textContent = `${u.name} さんの応援チームを抽選`;
-  document.getElementById('rouletteHint').textContent = `スタートで回転、ストップで決定。残り候補 ${candidates.length} チーム。`;
+  document.getElementById('rouletteTitle').textContent = '遊びルーレット';
+  document.getElementById('rouletteHint').textContent = `スタートで回転、ストップで決定。配分には反映しない遊び用です。候補 ${candidates.length} チーム。`;
   document.getElementById('rouletteResult').textContent = 'スタートで回転';
   document.getElementById('rouletteActions').innerHTML = `<button class="btn" onclick="startRoulette()">スタート</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
   overlay.classList.add('show');
-  overlay.dataset.user = userId;
   if(rouletteFrame) cancelAnimationFrame(rouletteFrame);
-  rouletteState = { userId, candidates, rotation: Math.random() * Math.PI * 2, spinning: false, finalTeam: null, finalIndex: -1 };
+  rouletteState = { candidates, rotation: Math.random() * Math.PI * 2, spinning: false, finalTeam: null, finalIndex: -1 };
   drawRouletteWheel(candidates, rouletteState.rotation);
 }
 function drawRouletteWheel(candidateIds, rotation){
@@ -776,7 +778,6 @@ function stopRoulette(){
   while(target < current + Math.PI * 6) target += Math.PI * 2;
   const start = current, diff = target - start, duration = 1500, started = Date.now();
   const ease = t => 1 - Math.pow(1 - t, 3);
-  const uid = rouletteState.userId;
   const settle = () => {
     const t = Math.min(1, (Date.now() - started) / duration);
     rouletteState.rotation = start + diff * ease(t);
@@ -784,17 +785,9 @@ function stopRoulette(){
     if(t < 1){ rouletteFrame = requestAnimationFrame(settle); return; }
     const team = rouletteState.finalTeam;
     const teamObj = TEAMS[team];
-    const u = userById(uid);
-    const assigned = setUserTeam(uid, team, 'roulette');
-    document.getElementById('rouletteResult').innerHTML = assigned
-      ? `<img src="${teamObj.flag}" alt="" onerror="this.style.visibility='hidden'">${teamObj.ja}`
-      : '指名できませんでした';
-    document.getElementById('rouletteHint').textContent = assigned
-      ? `${u.name} さんの応援は ${teamObj.ja} に決定！`
-      : '候補が更新されました。開き直してください。';
-    document.getElementById('rouletteActions').innerHTML = assigned
-      ? `<button class="btn" onclick="openRoulette('${uid}')">もう一回</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`
-      : `<button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
+    document.getElementById('rouletteResult').innerHTML = `<img src="${teamObj.flag}" alt="" onerror="this.style.visibility='hidden'">${teamObj.ja}`;
+    document.getElementById('rouletteHint').textContent = `${teamObj.ja} が出ました。配分には反映していません。`;
+    document.getElementById('rouletteActions').innerHTML = `<button class="btn" onclick="openRoulette()">もう一回</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
   };
   settle();
 }
@@ -834,39 +827,60 @@ function fmtJst(iso){
     return new Intl.DateTimeFormat('ja-JP', { timeZone:'Asia/Tokyo', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(iso));
   } catch { return ''; }
 }
+function matchTone(match){
+  if(match.status === 'complete') return 'complete';
+  if(match.status === 'live') return 'live';
+  const diff = new Date(match.utc).getTime() - Date.now();
+  if(diff >= 0 && diff <= 24 * 60 * 60 * 1000) return 'today';
+  if(diff > 0 && diff <= 72 * 60 * 60 * 1000) return 'soon';
+  return 'scheduled';
+}
+function matchLabel(match){
+  const tone = matchTone(match);
+  if(tone === 'complete') return '終了';
+  if(tone === 'live') return 'ライブ';
+  if(tone === 'today') return '24h内';
+  if(tone === 'soon') return '3日内';
+  return '予定';
+}
 
 /* ===== 5人の応援チーム描画 ===== */
+function renderTeamChip(teamId, userId){
+  const t = TEAMS[teamId];
+  if(!t) return '';
+  const prog = teamProgress(teamId);
+  const rm = (editMode && userId) ? `<button class="chip-x" onclick="removeTeam('${userId}','${teamId}')" aria-label="${t.ja}を外す">×</button>` : '';
+  return `<div class="team-chip ${prog.state}">
+    <img src="${t.flag}" alt="${t.ja} 国旗" onerror="this.style.visibility='hidden'">
+    <span class="chip-name">${t.ja}<span class="team-code">${t.abbr}</span></span>
+    <b>${winCount(teamId)}勝</b>${rm}
+  </div>`;
+}
 function renderPool(){
   const grid = document.getElementById('poolGrid');
   if(!grid) return;
+  const unassigned = unassignedTeams();
   grid.innerHTML = USERS.map(u => {
-    const p = picks[u.id];
-    const t = p && TEAMS[p.team];
-    const teamHtml = t
-      ? `<img src="${t.flag}" alt="" onerror="this.style.visibility='hidden'">${t.ja}<span class="mb">${p.method === 'roulette' ? '🎰' : '✏️'}</span>`
-      : `<span class="none">未選択</span>`;
-    const avail = availableTeamsForPick(u.id).map(id => TEAMS[id]).sort((a,b) => a.ja.localeCompare(b.ja, 'ja'));
-    const opts = `<option value="">手動で選ぶ…</option>` + avail.map(tt => `<option value="${tt.abbr}">${tt.ja}</option>`).join('');
-    const sel = `<select aria-label="${u.name}の応援を選ぶ" onchange="setUserTeam('${u.id}', this.value,'manual'); this.selectedIndex=0;">${opts}</select>`;
-    const clearBtn = t ? `<button class="btn secondary clear" onclick="clearUserTeam('${u.id}')" aria-label="${u.name}の応援を解除">解除</button>` : '';
-    return `<article class="user-card ${me === u.id ? 'me' : ''}" style="--uc:${u.color}">
+    const teams = getUserTeams(u.id);
+    const teamHtml = teams.length ? teams.map(id => renderTeamChip(id, u.id)).join('') : `<div class="note">未配分</div>`;
+    const addCtrl = (editMode && teams.length < 6)
+      ? `<select class="add-team" aria-label="${u.name}にチームを追加" onchange="addTeam('${u.id}', this.value); this.selectedIndex=0;"><option value="">＋ チームを追加（残り${6 - teams.length}）</option>${unassigned.map(id => `<option value="${id}">${TEAMS[id].ja}</option>`).join('')}</select>`
+      : '';
+    return `<article class="user-card ${me === u.id ? 'me' : ''} ${editMode ? 'editing' : ''}" style="--uc:${u.color}">
       <div class="user-head">
         <div class="user-badge">${u.name}</div>
-        <div class="user-name">${u.name}${me === u.id ? '<span class="you">あなた</span>' : ''}</div>
+        <div class="user-name">${u.name}${me === u.id ? '<span class="you">あなた</span>' : ''}<span class="ucount">${teams.length}/6</span></div>
       </div>
-      <div class="user-team">${teamHtml}</div>
-      <div class="user-actions">
-        <button class="btn" onclick="openRoulette('${u.id}')">🎰</button>
-        ${sel}
-        ${clearBtn}
-      </div>
+      <div class="user-team-grid">${teamHtml}</div>
+      ${addCtrl}
+      <div class="user-total"><span>合計</span><strong>${userPoints(u.id)} pt</strong></div>
     </article>`;
   }).join('');
   const meSel = document.getElementById('meSelect');
   if(meSel) meSel.value = me;
-  const count = USERS.filter(u => picks[u.id]).length;
+  const count = new Set(assignedTeamIds()).size;
   const top = document.getElementById('topPoolText');
-  if(top) top.textContent = `応援チーム: ${count} / 5 人が選択済み`;
+  if(top) top.textContent = `配分済み: ${count} / ${assignableTeamIds().length} チーム`;
 }
 
 /* ===== 進捗（リーダーボード用） ===== */
@@ -895,19 +909,16 @@ function renderLeaderboard(){
   const el = document.getElementById('leaderboard');
   if(!el) return;
   const rows = USERS.map(u => {
-    const p = picks[u.id];
-    const team = p && p.team;
-    return { u, team, t: team && TEAMS[team], prog: teamProgress(team) };
-  }).sort((a,b) => b.prog.rank - a.prog.rank);
+    const teams = getUserTeams(u.id);
+    const points = userPoints(u.id);
+    return { u, teams, points };
+  }).sort((a,b) => b.points - a.points || a.u.name.localeCompare(b.u.name, 'ja'));
   el.innerHTML = rows.map(r => {
-    const sc = r.prog.state;
-    const teamHtml = r.t
-      ? `<img src="${r.t.flag}" alt="" onerror="this.style.visibility='hidden'"><span class="tname">${r.t.ja}</span>`
-      : `<span class="none">未選択</span>`;
+    const detail = r.teams.map(id => `${TEAMS[id].abbr}${winCount(id) ? ` ${winCount(id)}勝` : ''}`).join(' / ');
     return `<div class="lb-row">
       <div class="lb-user" style="background:${r.u.color}">${r.u.name}</div>
-      <div class="lb-team">${teamHtml}</div>
-      <div class="lb-status ${sc}">${r.prog.text}</div>
+      <div class="lb-main"><div class="lb-name">${r.u.name}</div><div class="lb-detail">${detail || '未配分'}</div></div>
+      <div class="lb-points">${r.points} pt</div>
     </div>`;
   }).join('');
 }
@@ -952,9 +963,9 @@ function renderBracket(){
     const pos = POS[id];
     const hasOwner = m.slots.some(s => { const tid = getSlotTeam(s); return tid && ownersOf(tid).length; });
     const rows = m.slots.map(slot => teamRow(getSlotTeam(slot), slot, m)).join('');
-    const status = m.status || 'scheduled';
-    return `<article class="match-card ${status} ${hasOwner ? 'has-owner' : ''}" id="card-${id}" style="left:${pos.x}px;top:${pos.y}px" title="M${m.num} / ${m.venue} / ${fmtJst(m.utc)}">
-      <div class="match-meta"><b>M${m.num}</b><span>${m.venue}</span><span class="tag">${roundLabel(status)}</span></div>
+    const tone = matchTone(m);
+    return `<article class="match-card ${tone} ${hasOwner ? 'has-owner' : ''}" id="card-${id}" style="left:${pos.x}px;top:${pos.y}px" title="M${m.num} / ${m.venue} / ${fmtJst(m.utc)}">
+      <div class="match-meta"><b>M${m.num}</b><span>${m.venue}</span><span class="tag">${matchLabel(m)}</span></div>
       <div class="teams">${rows}</div>
     </article>`;
   }).join('');
@@ -972,9 +983,7 @@ function teamRow(teamId, slot, match){
   const flag = t ? `<img class="flag-mini" src="${t.flag}" alt="${t.ja} 国旗" onerror="this.style.visibility='hidden'">` : `<span></span>`;
   const dots = isOwned ? `<span class="owner-dots">${owners.map(o => `<i style="background:${o.color}" title="${o.name}"></i>`).join('')}</span>` : '';
   const name = t ? `${t.ja}${dots}<span class="team-code">${t.abbr}</span>` : getPlaceholder(slot);
-  const action = t ? `onclick="pickTeamFromBracket('${teamId}')" title="${t.ja}をあなたの応援にする"` : '';
-  const tag = t ? 'button' : 'div';
-  return `<${tag} type="button" class="${cls}" ${action}><span class="flag-wrap">${flag}</span><span class="team-name">${name}</span><span class="score">${score === '' ? '—' : score}</span></${tag}>`;
+  return `<div class="${cls}"><span class="flag-wrap">${flag}</span><span class="team-name">${name}</span><span class="score">${score === '' ? '—' : score}</span></div>`;
 }
 function drawConnectors(){
   const canvas = document.getElementById('connectorCanvas');
@@ -1023,7 +1032,7 @@ function renderMiniSchedule(){
     const teams = getParticipants(id).map(t => t ? TEAMS[t].ja : '未定').join(' vs ');
     const score = m.score ? ` ${Object.values(m.score).join('-')}` : '';
     const owned = getParticipants(id).some(tid => tid && ownersOf(tid).length);
-    return `<div class="mini-match ${owned ? 'owned' : ''}"><span>M${m.num} ${teams}${score}</span><b>${fmtJst(m.utc)}</b></div>`;
+    return `<div class="mini-match ${matchTone(m)} ${owned ? 'owned' : ''}"><span>M${m.num} ${teams}${score}</span><b>${fmtJst(m.utc)}</b></div>`;
   }).join('');
 }
 function renderAll(){
@@ -1180,11 +1189,124 @@ async function copyPageLink(){
   const url = location.href.split('#')[0];
   try {
     await navigator.clipboard.writeText(url);
-    toast('ページのURLをコピーしました。同じURLを開くと全員の応援が共有されます。');
+    toast('ページのURLをコピーしました。同じ配分表を見られます。');
   } catch {
     prompt('このURLを共有してください', url);
   }
 }
+
+/* ===== 試合前BGM（ユーザー操作で再生。開始/停止/ループ継ぎ目をフェード） ===== */
+const BGM_SRC = 'assets/audio/pre-match-bgm.mp3';
+const BGM_VOLUME = 0.62;
+const BGM_FADE_MS = 2400;
+const BGM_OVERLAP_SEC = 2.8;
+const bgmState = { players:[], active:0, playing:false, loading:false, timers:[], stopTimer:null };
+
+function setBgmButton(state){
+  const btn = document.getElementById('bgmBtn');
+  if(!btn) return;
+  btn.classList.toggle('playing', state === 'playing');
+  btn.classList.toggle('loading', state === 'loading');
+  btn.disabled = state === 'loading';
+  btn.setAttribute('aria-pressed', state === 'playing' ? 'true' : 'false');
+  btn.textContent = state === 'playing' ? '♪ BGM ON' : state === 'loading' ? '♪ 読み込み中' : '♪ BGM';
+}
+function ensureBgmPlayers(){
+  if(bgmState.players.length) return;
+  bgmState.players = [0, 1].map(() => {
+    const audio = new Audio(BGM_SRC);
+    audio.preload = 'auto';
+    audio.volume = 0;
+    audio.loop = false;
+    return audio;
+  });
+}
+function clearBgmTimers(){
+  bgmState.timers.forEach(id => clearTimeout(id));
+  bgmState.timers = [];
+  if(bgmState.stopTimer) clearTimeout(bgmState.stopTimer);
+  bgmState.stopTimer = null;
+}
+function fadeAudio(audio, to, ms = BGM_FADE_MS){
+  const from = Number.isFinite(audio.volume) ? audio.volume : 0;
+  const started = Date.now();
+  const step = () => {
+    const t = Math.min(1, (Date.now() - started) / ms);
+    audio.volume = Math.max(0, Math.min(1, from + (to - from) * t));
+    if(t < 1 && bgmState.players.includes(audio)) bgmState.timers.push(setTimeout(step, 80));
+  };
+  step();
+}
+function pauseAndReset(audio){
+  audio.pause();
+  try { audio.currentTime = 0; } catch {}
+  audio.volume = 0;
+}
+function stopAllBgmPlayers(){
+  bgmState.players.forEach(pauseAndReset);
+}
+function scheduleBgmLoop(){
+  if(!bgmState.playing) return;
+  const current = bgmState.players[bgmState.active];
+  const check = () => {
+    if(!bgmState.playing) return;
+    const duration = current.duration;
+    if(Number.isFinite(duration) && duration > 0 && duration - current.currentTime <= BGM_OVERLAP_SEC){
+      const nextIndex = bgmState.active === 0 ? 1 : 0;
+      const next = bgmState.players[nextIndex];
+      pauseAndReset(next);
+      next.play().then(() => {
+        fadeAudio(next, BGM_VOLUME, BGM_FADE_MS);
+        fadeAudio(current, 0, BGM_FADE_MS);
+        bgmState.active = nextIndex;
+        bgmState.timers.push(setTimeout(() => {
+          pauseAndReset(current);
+          scheduleBgmLoop();
+        }, BGM_FADE_MS + 160));
+      }).catch(() => stopBgm(true));
+      return;
+    }
+    bgmState.timers.push(setTimeout(check, 240));
+  };
+  check();
+}
+async function startBgm(){
+  if(bgmState.playing || bgmState.loading) return;
+  bgmState.loading = true;
+  setBgmButton('loading');
+  try {
+    ensureBgmPlayers();
+    clearBgmTimers();
+    stopAllBgmPlayers();
+    const current = bgmState.players[bgmState.active];
+    await current.play();
+    bgmState.playing = true;
+    bgmState.loading = false;
+    fadeAudio(current, BGM_VOLUME, BGM_FADE_MS);
+    scheduleBgmLoop();
+    setBgmButton('playing');
+  } catch (e) {
+    bgmState.playing = false;
+    bgmState.loading = false;
+    toast('BGMの読み込みに失敗しました。音源ファイルを確認してください。');
+    setBgmButton('idle');
+  }
+}
+function stopBgm(silent = false){
+  if(!bgmState.playing && !bgmState.loading) return;
+  bgmState.playing = false;
+  bgmState.loading = false;
+  clearBgmTimers();
+  bgmState.players.forEach(audio => fadeAudio(audio, 0, BGM_FADE_MS));
+  bgmState.stopTimer = setTimeout(() => {
+    stopAllBgmPlayers();
+    bgmState.stopTimer = null;
+  }, BGM_FADE_MS + 160);
+  setBgmButton('idle');
+  if(silent) toast('BGMの再生を停止しました。');
+}
+function toggleBgm(){ bgmState.playing ? stopBgm() : startBgm(); }
+
 function toast(message){
   const el = document.getElementById('toast');
   el.textContent = message;
@@ -1193,6 +1315,8 @@ function toast(message){
   window.__toastTimer = setTimeout(() => el.classList.remove('show'), 3600);
 }
 
+Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm });
+
 /* ===== 初期化 ===== */
 function init(){
   const meSel = document.getElementById('meSelect');
@@ -1200,9 +1324,17 @@ function init(){
   meSel.value = me;
   meSel.addEventListener('change', () => setMe(meSel.value));
 
-  initSupabase();
+  const sync = document.getElementById('syncBadge');
+  if(sync){
+    sync.textContent = '固定配分';
+    sync.classList.remove('off');
+    sync.classList.add('on');
+  }
+  ASSIGNMENTS = loadAssignments();
+  saveAssignments();
   renderAll();
 
+  document.getElementById('bgmBtn').addEventListener('click', toggleBgm);
   document.getElementById('refreshBtn').addEventListener('click', refreshScores);
   document.getElementById('copyShareBtn').addEventListener('click', copyPageLink);
   document.getElementById('viewFit').addEventListener('click', () => applyViewMode('fit'));
