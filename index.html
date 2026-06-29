@@ -1308,6 +1308,11 @@ async function startBgm(){
     clearBgmTimers();
     stopAllBgmPlayers();
     const current = bgmState.players[bgmState.active];
+    // iOS対策: 同じタップ操作内で控えのプレイヤーも解錠しておく（ループ時の2枚目再生がブロックされないように）
+    bgmState.players.forEach(p => {
+      if(p === current) return;
+      try { p.muted = true; const r = p.play(); if(r && r.then){ r.then(() => { p.pause(); try{ p.currentTime = 0; }catch{} p.muted = false; }).catch(() => { p.muted = false; }); } } catch {}
+    });
     await current.play();
     bgmState.playing = true;
     bgmState.loading = false;
