@@ -19,10 +19,10 @@
       --gold: #f7c948;
       --favorite: #ffd166;
       --cardW: 224px;
-      --cardH: 44px;
+      --cardH: 74px;
       --gapX: 22px;
       --stageW: 1208px;
-      --stageH: 720px;
+      --stageH: 1400px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; }
@@ -191,16 +191,17 @@
     .match-card.complete::before { background: var(--accent); }
     .match-card.live::before { background: var(--danger); box-shadow: 0 0 18px var(--danger); }
     .match-card.has-owner { border-color: rgba(255,209,102,.58); box-shadow: 0 0 0 2px rgba(255,209,102,.12), 0 10px 26px rgba(0,0,0,.22); }
-    .match-meta { display:flex; justify-content:space-between; align-items:center; gap:7px; padding:4px 7px 2px 10px; color: var(--muted); font-size: 10px; height: 17px; border-bottom:1px solid rgba(255,255,255,.08); }
+    .match-meta { display:flex; justify-content:space-between; align-items:center; gap:7px; padding:4px 7px 3px 10px; color: var(--muted); font-size: 10px; height: 21px; border-bottom:1px solid rgba(255,255,255,.08); }
     .match-meta b { color: #eaf4ff; font-size: 10px; }
+    .match-meta span:nth-child(2) { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.09); color:#d8e6f5; font-size: 9px; }
-    .teams { padding: 2px 6px 4px 10px; display:grid; gap:1px; }
-    .team-row { display:grid; grid-template-columns: 22px minmax(0,1fr) 27px; gap:6px; align-items:center; min-height: 12px; border-radius: 8px; padding: 1px 3px 1px 0; color: inherit; background: transparent; border:0; text-align:left; cursor:pointer; }
+    .teams { padding: 4px 6px 6px 10px; display:grid; gap:2px; }
+    .team-row { display:grid; grid-template-columns: 22px minmax(0,1fr) 27px; gap:6px; align-items:center; min-height: 18px; border-radius: 8px; padding: 1px 3px 1px 0; color: inherit; background: transparent; border:0; text-align:left; cursor:pointer; }
     .team-row.winner { background: rgba(20,212,165,.18); color: #f7fffc; font-weight: 900; }
     .team-row.loser { opacity: .52; }
     .team-row.tbd { color: #b9c4d2; cursor: default; }
     .team-row.owned { background: rgba(255,209,102,.16); }
-    .team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 1.2; display:flex; align-items:center; gap:3px; }
+    .team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.2; display:flex; align-items:center; gap:3px; }
     .team-code { color:#9eabba; font-size: 9px; margin-left: 2px; }
     .owner-dots { display:inline-flex; gap:2px; margin-left:2px; }
     .owner-dots i { width:7px; height:7px; border-radius:50%; display:inline-block; box-shadow:0 0 0 1px rgba(0,0,0,.35); }
@@ -243,11 +244,11 @@
     .roulette-actions { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 40px; }
     .roulette-hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
 
-    .detail-mode { --cardW: 292px; --cardH: 66px; --gapX: 26px; --stageW: 1564px; --stageH: 1110px; }
-    .detail-mode .match-meta { height: 28px; font-size: 11px; padding:6px 8px 3px 11px; }
+    .detail-mode { --cardW: 292px; --cardH: 94px; --gapX: 26px; --stageW: 1564px; --stageH: 1640px; }
+    .detail-mode .match-meta { height: 24px; font-size: 11px; padding:5px 8px 3px 11px; }
     .detail-mode .match-meta b { font-size:11px; }
-    .detail-mode .teams { padding: 4px 8px 7px 11px; gap:3px; }
-    .detail-mode .team-row { grid-template-columns: 27px minmax(0,1fr) 32px; min-height:24px; }
+    .detail-mode .teams { padding: 5px 8px 8px 11px; gap:3px; }
+    .detail-mode .team-row { grid-template-columns: 27px minmax(0,1fr) 32px; min-height:25px; }
     .detail-mode .team-name { font-size:13px; }
     .detail-mode .team-code { font-size:11px; }
     .detail-mode .score { font-size:13px; min-width:24px; }
@@ -556,8 +557,22 @@ const NEXT_JA = { r32:'ベスト16', r16:'ベスト8', qf:'ベスト4', sf:'決�
 let picks = {};                                  // { userId: {team, method, updatedAt} }
 let me = '';
 try { me = localStorage.getItem('wc2026Me') || ''; } catch {}
-let appState = { viewMode: 'fit' };
-try { appState.viewMode = localStorage.getItem('wc2026View') || 'fit'; } catch {}
+function defaultViewMode(){
+  return window.matchMedia && window.matchMedia('(max-width: 640px)').matches ? 'scroll' : 'fit';
+}
+const VIEW_LAYOUT_VERSION = 'bracket-spacing-v2';
+function loadViewMode(){
+  const fallback = defaultViewMode();
+  try {
+    if(localStorage.getItem('wc2026ViewVersion') !== VIEW_LAYOUT_VERSION){
+      localStorage.setItem('wc2026ViewVersion', VIEW_LAYOUT_VERSION);
+      localStorage.removeItem('wc2026View');
+      return fallback;
+    }
+    return localStorage.getItem('wc2026View') || fallback;
+  } catch { return fallback; }
+}
+let appState = { viewMode: loadViewMode() };
 let sb = null, dbReady = false, pollTimer = null;
 let rouletteTimer = null;
 
@@ -831,7 +846,7 @@ function buildPositions(){
   const cardW = detail ? 292 : 224;
   const gapX = detail ? 26 : 22;
   const topOffset = detail ? 56 : 48;
-  const step = detail ? 68 : 42;
+  const step = detail ? 102 : 82;
   const xFor = col => (col - 1) * (cardW + gapX);
   ROUND_LAYOUT[0].ids.forEach((id, i) => POS[id] = {x:xFor(1), y: topOffset + i * step});
   [1,2,3].forEach(li => {
@@ -893,7 +908,7 @@ function drawConnectors(){
   ctx.strokeStyle = 'rgba(173,199,230,.36)';
   ctx.lineWidth = 2;
   const cardW = parseFloat(getComputedStyle(stage).getPropertyValue('--cardW')) || (document.body.classList.contains('detail-mode') ? 292 : 224);
-  const cardH = parseFloat(getComputedStyle(stage).getPropertyValue('--cardH')) || (document.body.classList.contains('detail-mode') ? 66 : 44);
+  const cardH = parseFloat(getComputedStyle(stage).getPropertyValue('--cardH')) || (document.body.classList.contains('detail-mode') ? 94 : 74);
   Object.entries(MATCHES).forEach(([childId, child]) => {
     if(child.round === 'r32') return;
     child.slots.forEach(slot => {
@@ -1035,16 +1050,21 @@ async function refreshScores(){
 /* ===== 表示モード ===== */
 function applyViewMode(mode){
   appState.viewMode = mode;
-  try { localStorage.setItem('wc2026View', mode); } catch {}
+  try {
+    localStorage.setItem('wc2026ViewVersion', VIEW_LAYOUT_VERSION);
+    localStorage.setItem('wc2026View', mode);
+  } catch {}
   const viewport = document.getElementById('stageViewport');
   const scroll = document.getElementById('stageScroll');
   const shell = document.getElementById('bracketShell');
   const detail = mode === 'detail';
+  const wasDetail = document.body.classList.contains('detail-mode');
   document.body.classList.toggle('detail-mode', detail);
   const stageW = detail ? 1564 : 1208;
-  const stageH = detail ? 1110 : 720;
+  const stageH = detail ? 1640 : 1400;
   document.documentElement.style.setProperty('--stageW', stageW + 'px');
   document.documentElement.style.setProperty('--stageH', stageH + 'px');
+  if(wasDetail !== detail) renderBracket();
   if(detail){
     viewport.style.overflow = 'auto';
     viewport.style.maxHeight = '74vh';
