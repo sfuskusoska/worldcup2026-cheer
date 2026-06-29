@@ -94,7 +94,7 @@
     h1 { margin: 8px 0 8px; font-size: clamp(26px, 4.6vw, 56px); line-height: .98; letter-spacing: -.05em; }
     .lead { margin: 0; color: #d7e2ef; line-height: 1.7; font-size: 14px; max-width: 880px; }
     .brand-box { min-height: 130px; display:grid; place-items:center; border-radius: 22px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 14px; }
-    .brand-box img { max-width: 170px; max-height: 110px; width: 100%; height: auto; filter: drop-shadow(0 12px 25px rgba(0,0,0,.30)); }
+    .brand-box img { max-width: 100%; max-height: 200px; width: auto; height: auto; border-radius: 14px; filter: drop-shadow(0 14px 28px rgba(0,0,0,.42)); }
     .status-strip { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; align-items:center; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:7px 9px; border-radius:999px; background: rgba(255,255,255,.075); border: 1px solid rgba(255,255,255,.10); color:#dbe7f4; font-size:12px; }
     .sync-badge { font-size:12px; padding:7px 11px; border-radius:999px; border:1px solid rgba(255,255,255,.14); font-weight:800; display:inline-flex; align-items:center; gap:6px; }
@@ -143,6 +143,8 @@
     .team-chip.wait { color:#dce6f2; }
     .user-total { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:auto; padding-top:2px; color:#e9f4ff; font-size:13px; font-weight:900; }
     .user-total strong { font-size:18px; color:#fff; }
+    .user-total .pred { color:#ffe29a; font-weight:900; white-space:nowrap; }
+    .lb-pred { display:block; font-size:11px; color:#ffe29a; font-weight:800; margin-top:3px; }
     .user-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
     .user-actions .btn { padding:8px 10px; font-size:12px; }
     .user-actions select { width:auto; flex:1 1 110px; min-width:96px; padding:8px 9px; font-size:12px; border-radius:11px; }
@@ -296,7 +298,7 @@
       .topbar-inner { align-items:flex-start; flex-direction:column; gap:8px; }
       .top-actions { justify-content:flex-start; width:100%; }
       .hero-card { grid-template-columns: 1fr; padding: 16px; }
-      .brand-box { display:none; }
+      .brand-box { min-height: 0; padding: 8px; }
       .bracket-head { align-items:flex-start; flex-direction:column; }
       h1 br { display:none; }
     }
@@ -352,8 +354,8 @@
           <span class="pill">反映済み: カナダが南アフリカに1-0で勝利</span>
         </div>
       </div>
-      <div class="brand-box" title="FIFA World Cup 2026 emblem">
-        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/2026_FIFA_World_Cup_emblem_(with_wordmark).svg" alt="FIFA World Cup 2026 emblem" loading="eager" />
+      <div class="brand-box" title="FIFA World Cup 2026">
+        <img src="assets/image/top.png" alt="FIFA World Cup 2026" loading="eager" />
       </div>
     </div>
   </header>
@@ -440,11 +442,11 @@
         </div>
         <div class="table-wrap">
           <table aria-label="優勝オッズ表">
-            <thead><tr><th>順位</th><th>国</th><th>主なオッズ</th><th>概算確率</th><th>出典</th></tr></thead>
+            <thead><tr><th>順位</th><th>国</th><th>優勝オッズ</th><th>優勝確率</th><th>予想pt</th><th>持ち主</th></tr></thead>
             <tbody id="oddsBody"></tbody>
           </table>
         </div>
-        <p class="note">オッズはブックメーカー、地域、時間で変わります。賭けの推奨ではありません。</p>
+        <p class="note">オッズ・優勝確率・予想ptは、実力(Elo)とブラケットのモンテカルロ試算による参考値です（賭けの推奨ではありません）。「予想pt」＝期待勝利数＝1勝1点での期待ポイント。</p>
       </div>
     </section>
 
@@ -494,7 +496,7 @@ const DEFAULT_ASSIGNMENTS = {
   dai:    ['ARG','POR','MEX','JPN','AUS','COD'],
   ta:     ['ESP','NED','MAR','ECU','EGY','PAR'],
   kata:   ['ENG','BEL','SUI','AUT','DZA','BIH'],
-  minami: ['BRA','CRO','COL','SWE','CIV','CPV']
+  minami: ['BRA','CRO','COL','SWE','CIV','CAN']
 };
 let ASSIGNMENTS = DEFAULT_ASSIGNMENTS;   /* UI編集／共有URL／localStorage で上書きされます */
 let editMode = false;
@@ -595,17 +597,42 @@ const ROUND_LAYOUT = [
   {id:'f', col:5, ids:['m104']}
 ];
 
+/* 全チームのオッズ・優勝確率・予想pt（期待勝利数）。実力Elo×ブラケットの50万回モンテカルロ試算（RSAは敗退のため除外） */
 const ODDS = [
-  {rank:1, team:'FRA', odds:'+300', prob:'25.0%', source:'BetMGM'},
-  {rank:2, team:'ARG', odds:'+400', prob:'20.0%', source:'BetMGM'},
-  {rank:3, team:'ESP', odds:'+700', prob:'12.5%', source:'BetMGM'},
-  {rank:3, team:'ENG', odds:'+700', prob:'12.5%', source:'BetMGM'},
-  {rank:5, team:'BRA', odds:'+800', prob:'11.1%', source:'参考'},
-  {rank:6, team:'GER', odds:'+1000', prob:'9.1%', source:'参考'},
-  {rank:7, team:'POR', odds:'+1200', prob:'7.7%', source:'参考'},
-  {rank:8, team:'NED', odds:'+1600', prob:'5.9%', source:'参考'},
-  {rank:9, team:'JPN', odds:'+5000', prob:'2.0%', source:'参考'}
+  {rank:1,  team:'ARG', odds:'+310',    prob:'24.5%', ev:3.21},
+  {rank:2,  team:'FRA', odds:'+405',    prob:'19.7%', ev:2.56},
+  {rank:3,  team:'ENG', odds:'+650',    prob:'13.3%', ev:2.53},
+  {rank:4,  team:'ESP', odds:'+865',    prob:'10.4%', ev:2.03},
+  {rank:5,  team:'BRA', odds:'+1095',   prob:'8.4%',  ev:1.93},
+  {rank:6,  team:'GER', odds:'+1730',   prob:'5.5%',  ev:1.59},
+  {rank:7,  team:'POR', odds:'+2485',   prob:'3.9%',  ev:1.28},
+  {rank:8,  team:'NED', odds:'+2770',   prob:'3.5%',  ev:1.39},
+  {rank:9,  team:'BEL', odds:'+4270',   prob:'2.3%',  ev:1.34},
+  {rank:10, team:'COL', odds:'+6060',   prob:'1.6%',  ev:1.41},
+  {rank:11, team:'CRO', odds:'+10155',  prob:'1.0%',  ev:0.67},
+  {rank:12, team:'USA', odds:'+12155',  prob:'0.8%',  ev:1.15},
+  {rank:13, team:'SUI', odds:'+12610',  prob:'0.8%',  ev:1.09},
+  {rank:14, team:'CAN', odds:'+12915',  prob:'0.8%',  ev:0.51},
+  {rank:15, team:'MAR', odds:'+15655',  prob:'0.6%',  ev:0.66},
+  {rank:16, team:'JPN', odds:'+16595',  prob:'0.6%',  ev:0.56},
+  {rank:17, team:'MEX', odds:'+25320',  prob:'0.4%',  ev:0.73},
+  {rank:18, team:'NOR', odds:'+26480',  prob:'0.4%',  ev:0.87},
+  {rank:19, team:'SEN', odds:'+26795',  prob:'0.4%',  ev:0.65},
+  {rank:20, team:'ECU', odds:'+28070',  prob:'0.4%',  ev:0.70},
+  {rank:21, team:'AUT', odds:'+40190',  prob:'0.2%',  ev:0.36},
+  {rank:22, team:'AUS', odds:'+49700',  prob:'0.2%',  ev:0.72},
+  {rank:23, team:'DZA', odds:'+84935',  prob:'0.1%',  ev:0.56},
+  {rank:24, team:'CIV', odds:'+99999',  prob:'0.1%',  ev:0.51},
+  {rank:25, team:'EGY', odds:'+99999',  prob:'0.1%',  ev:0.53},
+  {rank:26, team:'SWE', odds:'+99999',  prob:'0.1%',  ev:0.19},
+  {rank:27, team:'GHA', odds:'+99999',  prob:'0.1%',  ev:0.40},
+  {rank:28, team:'BIH', odds:'+99999',  prob:'0.0%',  ev:0.42},
+  {rank:29, team:'PAR', odds:'+99999',  prob:'0.0%',  ev:0.22},
+  {rank:30, team:'COD', odds:'+99999',  prob:'0.0%',  ev:0.16},
+  {rank:31, team:'CPV', odds:'+99999',  prob:'0.0%',  ev:0.11}
 ];
+const EXPECTED_WINS = {};
+ODDS.forEach(o => { EXPECTED_WINS[o.team] = o.ev; });
 
 const ROUND_ORDER = { r32:1, r16:2, qf:3, '3rd':3, sf:4, f:5 };
 const ROUND_JA = { r32:'ラウンド32', r16:'ベスト16', qf:'ベスト8', sf:'ベスト4', f:'決勝', '3rd':'3位決定戦' };
@@ -637,7 +664,7 @@ const WHEEL_COLORS = ['#ff3b30', '#2f7fbd', '#2cc84d', '#f5c400', '#8a2be2', '#f
 function userById(id){ return USERS.find(u => u.id === id); }
 
 /* ===== 配分・得点（1勝=1点。配分は上の ASSIGNMENTS） ===== */
-const FINISHED_TEAM_IDS = new Set(['RSA', 'CAN']);
+const FINISHED_TEAM_IDS = new Set(['RSA']);   /* RSAは敗退。カナダ(CAN)は勝ち上がり中なので配分可 */
 function assignableTeamIds(){ return Object.keys(TEAMS).filter(id => !FINISHED_TEAM_IDS.has(id)); }
 function getUserTeams(userId){ return (ASSIGNMENTS[userId] || []).filter(id => TEAMS[id]); }
 function assignedTeamIds(){ return USERS.flatMap(u => getUserTeams(u.id)); }
@@ -645,6 +672,7 @@ function ownerOf(teamId){ return teamId ? (USERS.find(u => getUserTeams(u.id).in
 function ownersOf(teamId){ return teamId ? USERS.filter(u => getUserTeams(u.id).includes(teamId)) : []; }
 function winCount(teamId){ return teamId ? Object.values(MATCHES).filter(m => m.winner === teamId).length : 0; }
 function userPoints(userId){ return getUserTeams(userId).reduce((s, id) => s + winCount(id), 0); }
+function userPredicted(userId){ return getUserTeams(userId).reduce((s, id) => s + (EXPECTED_WINS[id] || 0), 0); }
 function setMe(v){
   me = v || '';
   try { localStorage.setItem('wc2026Me', me); } catch {}
@@ -873,7 +901,7 @@ function renderPool(){
       </div>
       <div class="user-team-grid">${teamHtml}</div>
       ${addCtrl}
-      <div class="user-total"><span>合計</span><strong>${userPoints(u.id)} pt</strong></div>
+      <div class="user-total"><span>合計 <strong>${userPoints(u.id)}</strong> pt</span><span class="pred">予想 <strong>${userPredicted(u.id).toFixed(1)}</strong> pt</span></div>
     </article>`;
   }).join('');
   const meSel = document.getElementById('meSelect');
@@ -911,14 +939,15 @@ function renderLeaderboard(){
   const rows = USERS.map(u => {
     const teams = getUserTeams(u.id);
     const points = userPoints(u.id);
-    return { u, teams, points };
-  }).sort((a,b) => b.points - a.points || a.u.name.localeCompare(b.u.name, 'ja'));
-  el.innerHTML = rows.map(r => {
+    const pred = userPredicted(u.id);
+    return { u, teams, points, pred };
+  }).sort((a,b) => b.points - a.points || b.pred - a.pred);
+  el.innerHTML = rows.map((r, i) => {
     const detail = r.teams.map(id => `${TEAMS[id].abbr}${winCount(id) ? ` ${winCount(id)}勝` : ''}`).join(' / ');
     return `<div class="lb-row">
       <div class="lb-user" style="background:${r.u.color}">${r.u.name}</div>
-      <div class="lb-main"><div class="lb-name">${r.u.name}</div><div class="lb-detail">${detail || '未配分'}</div></div>
-      <div class="lb-points">${r.points} pt</div>
+      <div class="lb-main"><div class="lb-name">${i + 1}位　${r.u.name}</div><div class="lb-detail">${detail || '未配分'}</div></div>
+      <div class="lb-points">${r.points} pt<span class="lb-pred">予想 ${r.pred.toFixed(1)}</span></div>
     </div>`;
   }).join('');
 }
@@ -928,9 +957,9 @@ function renderOdds(){
   const body = document.getElementById('oddsBody');
   body.innerHTML = ODDS.map(o => {
     const t = TEAMS[o.team];
-    const owners = ownersOf(o.team);
-    const dots = owners.length ? `<span class="owner-dots">${owners.map(x => `<i style="background:${x.color}" title="${x.name}"></i>`).join('')}</span>` : '';
-    return `<tr><td>${o.rank}</td><td><span class="odds-team"><img class="flag-mini" src="${t.flag}" alt="${t.ja} 国旗">${t.ja}${dots}</span></td><td class="odds-num">${o.odds}</td><td>${o.prob}</td><td>${o.source}</td></tr>`;
+    const owner = ownerOf(o.team);
+    const ownerHtml = owner ? `<span style="color:${owner.color};font-weight:900">${owner.name}</span>` : '<span class="note">—</span>';
+    return `<tr><td>${o.rank}</td><td><span class="odds-team"><img class="flag-mini" src="${t.flag}" alt="${t.ja} 国旗">${t.ja}</span></td><td class="odds-num">${o.odds}</td><td>${o.prob}</td><td>${o.ev.toFixed(2)}</td><td>${ownerHtml}</td></tr>`;
   }).join('');
 }
 
