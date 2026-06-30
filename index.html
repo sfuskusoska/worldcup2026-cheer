@@ -321,6 +321,16 @@
     .edit-bar .note { flex:1 1 220px; }
     .edit-bar .btn { padding:7px 11px; font-size:12px; }
     #editToggleBtn { white-space:nowrap; }
+    /* === 冒頭トリビュート === */
+    .tribute { margin: 12px auto 0; width: min(1500px, calc(100% - 28px)); position: relative; border: 1px solid rgba(247,201,72,.30); background: linear-gradient(135deg, rgba(247,201,72,.12), rgba(255,255,255,.045)); border-radius: 20px; padding: 16px 18px 14px; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+    .tribute-x { position:absolute; top:8px; right:12px; background:none; border:0; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; }
+    .tribute-kicker { font-size:11px; letter-spacing:.05em; color:#ffd98a; font-weight:900; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .tribute-kicker img { width:20px; height:14px; border-radius:2px; object-fit:cover; box-shadow:0 0 0 1px rgba(255,255,255,.2); }
+    .tribute-title { font-size: clamp(18px, 3.6vw, 26px); font-weight: 1000; letter-spacing:-.02em; margin:7px 0 9px; color:#fff5dd; line-height:1.3; }
+    .tribute-body > p { margin:0 0 8px; color:#cdd9ea; font-size:13px; line-height:1.7; }
+    .tribute-body blockquote { margin:0 0 9px; padding:8px 12px; border-left:3px solid rgba(247,201,72,.55); background:rgba(255,255,255,.04); border-radius:0 10px 10px 0; color:#eef4fb; font-size:14px; line-height:1.85; }
+    .tribute-body blockquote:last-child { margin-bottom:0; }
+    .tribute-by { margin-top:8px; font-size:12px; color:var(--muted); font-weight:800; text-align:right; }
   </style>
 </head>
 <body>
@@ -342,6 +352,19 @@
       </div>
     </div>
   </div>
+
+  <section class="tribute" id="tribute">
+    <button class="tribute-x" onclick="dismissTribute()" aria-label="閉じる">×</button>
+    <div class="tribute-kicker"><img src="https://flagcdn.com/w40/jp.png" alt="">FIFA WORLD CUP 2026 · ラウンド32 — 日本 1–2 ブラジル</div>
+    <div class="tribute-title">世界中の尊敬を、勝ち取った夜。</div>
+    <div class="tribute-body">
+      <p>米FOXスポーツ解説、元スウェーデン代表ズラタン・イブラヒモビッチが、ブラジルに敗れた日本へ惜しみない賛辞を贈った。</p>
+      <blockquote>もう言葉が出ない。本当に悔しい。だけど、日本は自分たちの力を世界に見せつけた。きょうの日本に、ブラジルを怖がっている選手なんて１人もいなかった。歴史上、最も偉大なサッカー大国の一つを相手に「俺たちは絶対にやれる」って信じて戦うチームがそこにはあったんだ。</blockquote>
+      <blockquote>世間は「日本が負けた」ってことしか覚えないかもしれない。でも、僕は彼らがブラジルとガチンコで互角に渡り合ったことをずっと覚えている。この世代には、何かタイトルを取ってもらいたい。</blockquote>
+      <blockquote>みんな、悔し涙を流してスタジアムを去るだろう。だけど、朝起きたときには、自分たちを大いに誇りに思ってほしい。きょうは、ただブラジルと試合をしただけじゃない。世界中のサッカーファンから、最高の尊敬を勝ち取ったんだからね。</blockquote>
+    </div>
+    <div class="tribute-by">— ズラタン・イブラヒモビッチ（試合後コメント）</div>
+  </section>
 
   <header class="hero">
     <div class="wrap hero-card">
@@ -1356,6 +1379,11 @@ function stopBgm(silent = false){
 }
 function toggleBgm(){ bgmState.playing ? stopBgm() : startBgm(); }
 
+function dismissTribute(){
+  const t = document.getElementById('tribute');
+  if(t) t.style.display = 'none';
+  try { localStorage.setItem('wc2026TributeHidden', '1'); } catch {}
+}
 function toast(message){
   const el = document.getElementById('toast');
   el.textContent = message;
@@ -1383,6 +1411,7 @@ function init(){
   saveAssignments();
   renderAll();
 
+  try { if(localStorage.getItem('wc2026TributeHidden') === '1'){ const _t = document.getElementById('tribute'); if(_t) _t.style.display = 'none'; } } catch {}
   document.getElementById('bgmBtn').addEventListener('click', toggleBgm);
   document.getElementById('refreshBtn').addEventListener('click', refreshScores);
   document.getElementById('copyShareBtn').addEventListener('click', copyPageLink);
