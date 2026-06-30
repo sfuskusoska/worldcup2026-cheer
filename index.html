@@ -693,20 +693,23 @@ function sanitizeAssign(obj){
   });
   return out;
 }
+/* 保存バージョン: 古い壊れた #a= / wc2026Assign は無視し、確定配分(初期値)から再スタートさせる */
+const ASSIGN_PARAM = 'p';
+const ASSIGN_KEY = 'wc2026Assign2';
 function encodeAssign(){ return encodeURIComponent(JSON.stringify(ASSIGNMENTS)); }
 function loadAssignments(){
-  /* URLの #a= を最優先（プライベートブラウズでlocalStorageが消えても残る）。encodeURIComponentなので + 化けしない */
+  /* URLの #p= を最優先（プライベートブラウズでlocalStorageが消えても残る）。encodeURIComponentなので + 化けしない */
   try {
-    const m = location.hash.replace(/^#/, '').match(/(?:^|&)a=([^&]*)/);
+    const m = location.hash.replace(/^#/, '').match(new RegExp('(?:^|&)' + ASSIGN_PARAM + '=([^&]*)'));
     if(m && m[1]) return sanitizeAssign(JSON.parse(decodeURIComponent(m[1])));
   } catch {}
-  try { const s = localStorage.getItem('wc2026Assign'); if(s) return sanitizeAssign(JSON.parse(s)); } catch {}
+  try { const s = localStorage.getItem(ASSIGN_KEY); if(s) return sanitizeAssign(JSON.parse(s)); } catch {}
   return sanitizeAssign(DEFAULT_ASSIGNMENTS);
 }
 function saveAssignments(){
-  try { localStorage.setItem('wc2026Assign', JSON.stringify(ASSIGNMENTS)); } catch {}
-  /* 編集を保存するたびにURLの #a= も最新化（リロード・共有でも編集が保持される） */
-  try { history.replaceState(null, '', location.pathname + location.search + '#a=' + encodeAssign()); } catch {}
+  try { localStorage.setItem(ASSIGN_KEY, JSON.stringify(ASSIGNMENTS)); } catch {}
+  /* 編集を保存するたびにURLの #p= も最新化（古い #a= は上書きされて消える） */
+  try { history.replaceState(null, '', location.pathname + location.search + '#' + ASSIGN_PARAM + '=' + encodeAssign()); } catch {}
 }
 function assignedSet(){ const s = new Set(); USERS.forEach(u => getUserTeams(u.id).forEach(t => s.add(t))); return s; }
 function unassignedTeams(){
@@ -734,7 +737,7 @@ function toggleEdit(){
   renderPool();
 }
 async function shareAssignments(){
-  const url = location.href.split('#')[0] + '#a=' + encodeAssign();
+  const url = location.href.split('#')[0] + '#' + ASSIGN_PARAM + '=' + encodeAssign();
   try { await navigator.clipboard.writeText(url); toast('この配分の共有URLをコピーしました。開いた人に同じ配分が表示されます。'); }
   catch { prompt('この配分の共有URL', url); }
 }
