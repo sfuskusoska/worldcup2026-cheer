@@ -491,12 +491,13 @@
      （ページに埋め込まれるので、保存したURLを開いた全員に同じ配分が表示されます）
    - 下の初期値は実力均等（各人気帯から1チームずつ）のたたき台です。自由に変更可。
    ========================================================================= */
+/* 初期値＝ホスト確定の配分（DRコンゴ COD のみ未配分。リセットされてもこの配分に戻る） */
 const DEFAULT_ASSIGNMENTS = {
-  oka:    ['FRA','GER','USA','SEN','NOR','GHA'],
-  dai:    ['ARG','POR','MEX','JPN','AUS','COD'],
-  ta:     ['ESP','NED','MAR','ECU','EGY','PAR'],
-  kata:   ['ENG','BEL','SUI','AUT','DZA','BIH'],
-  minami: ['BRA','CRO','COL','SWE','CIV','CAN']
+  oka:    ['FRA','NOR','BEL','CIV','MEX','AUS'],
+  dai:    ['NED','CRO','ESP','BIH','SEN','EGY'],
+  ta:     ['JPN','BRA','GER','SWE','CPV','GHA'],
+  kata:   ['PAR','MAR','AUT','ARG','DZA','COL'],
+  minami: ['CAN','POR','USA','ECU','ENG','SUI']
 };
 let ASSIGNMENTS = DEFAULT_ASSIGNMENTS;   /* UI編集／共有URL／localStorage で上書きされます */
 let editMode = false;
@@ -692,15 +693,20 @@ function sanitizeAssign(obj){
   });
   return out;
 }
+function encodeAssign(){ return encodeURIComponent(JSON.stringify(ASSIGNMENTS)); }
 function loadAssignments(){
-  try { const h = new URLSearchParams(location.hash.slice(1)).get('a'); if(h) return sanitizeAssign(JSON.parse(atob(h))); } catch {}
+  /* URLの #a= を最優先（プライベートブラウズでlocalStorageが消えても残る）。encodeURIComponentなので + 化けしない */
+  try {
+    const m = location.hash.replace(/^#/, '').match(/(?:^|&)a=([^&]*)/);
+    if(m && m[1]) return sanitizeAssign(JSON.parse(decodeURIComponent(m[1])));
+  } catch {}
   try { const s = localStorage.getItem('wc2026Assign'); if(s) return sanitizeAssign(JSON.parse(s)); } catch {}
   return sanitizeAssign(DEFAULT_ASSIGNMENTS);
 }
 function saveAssignments(){
   try { localStorage.setItem('wc2026Assign', JSON.stringify(ASSIGNMENTS)); } catch {}
-  /* 編集を保存するたびにURLの #a= も最新化（リロード・共有でも編集が保持され、古い復元情報で戻らない） */
-  try { history.replaceState(null, '', location.pathname + location.search + '#a=' + btoa(JSON.stringify(ASSIGNMENTS))); } catch {}
+  /* 編集を保存するたびにURLの #a= も最新化（リロード・共有でも編集が保持される） */
+  try { history.replaceState(null, '', location.pathname + location.search + '#a=' + encodeAssign()); } catch {}
 }
 function assignedSet(){ const s = new Set(); USERS.forEach(u => getUserTeams(u.id).forEach(t => s.add(t))); return s; }
 function unassignedTeams(){
@@ -728,7 +734,7 @@ function toggleEdit(){
   renderPool();
 }
 async function shareAssignments(){
-  const url = location.href.split('#')[0] + '#a=' + btoa(JSON.stringify(ASSIGNMENTS));
+  const url = location.href.split('#')[0] + '#a=' + encodeAssign();
   try { await navigator.clipboard.writeText(url); toast('この配分の共有URLをコピーしました。開いた人に同じ配分が表示されます。'); }
   catch { prompt('この配分の共有URL', url); }
 }
