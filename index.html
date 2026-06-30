@@ -670,7 +670,9 @@ function getUserTeams(userId){ return (ASSIGNMENTS[userId] || []).filter(id => T
 function assignedTeamIds(){ return USERS.flatMap(u => getUserTeams(u.id)); }
 function ownerOf(teamId){ return teamId ? (USERS.find(u => getUserTeams(u.id).includes(teamId)) || null) : null; }
 function ownersOf(teamId){ return teamId ? USERS.filter(u => getUserTeams(u.id).includes(teamId)) : []; }
-function winCount(teamId){ return teamId ? Object.values(MATCHES).filter(m => m.winner === teamId).length : 0; }
+/* 終了済みの初戦（M73 カナダ×南アフリカ）は配分前に決着済みのためポイント対象外。カナダの今後の勝利は加算する */
+const NOSCORE_MATCH_IDS = new Set(['m73']);
+function winCount(teamId){ return teamId ? Object.entries(MATCHES).filter(([id, m]) => m.winner === teamId && !NOSCORE_MATCH_IDS.has(id)).length : 0; }
 function userPoints(userId){ return getUserTeams(userId).reduce((s, id) => s + winCount(id), 0); }
 function userPredicted(userId){ return getUserTeams(userId).reduce((s, id) => s + (EXPECTED_WINS[id] || 0), 0); }
 function setMe(v){
