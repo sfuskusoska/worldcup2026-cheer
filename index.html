@@ -695,7 +695,11 @@ function loadAssignments(){
   try { const s = localStorage.getItem('wc2026Assign'); if(s) return sanitizeAssign(JSON.parse(s)); } catch {}
   return sanitizeAssign(DEFAULT_ASSIGNMENTS);
 }
-function saveAssignments(){ try { localStorage.setItem('wc2026Assign', JSON.stringify(ASSIGNMENTS)); } catch {} }
+function saveAssignments(){
+  try { localStorage.setItem('wc2026Assign', JSON.stringify(ASSIGNMENTS)); } catch {}
+  /* 編集を保存するたびにURLの #a= も最新化（リロード・共有でも編集が保持され、古い復元情報で戻らない） */
+  try { history.replaceState(null, '', location.pathname + location.search + '#a=' + btoa(JSON.stringify(ASSIGNMENTS))); } catch {}
+}
 function assignedSet(){ const s = new Set(); USERS.forEach(u => getUserTeams(u.id).forEach(t => s.add(t))); return s; }
 function unassignedTeams(){
   const s = assignedSet();
