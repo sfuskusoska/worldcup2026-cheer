@@ -113,6 +113,37 @@
     .section-title h2 { margin: 0; font-size: 20px; letter-spacing: -.025em; }
     .note { color: var(--muted); font-size: 12px; line-height: 1.55; }
 
+    /* ===== 戦術ボード ===== */
+    .tactics-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .tactics-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .tactics-controls select { width:auto; min-width:150px; padding:9px 10px; font-size:13px; }
+    .tactics-controls .btn { padding:9px 12px; font-size:13px; }
+    .pitch-wrap { position:relative; width:100%; max-width:760px; aspect-ratio: 68 / 105; margin:0 auto; border-radius:16px; overflow:hidden; background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.05)),
+        repeating-linear-gradient(0deg, #1c6b3c 0, #1c6b3c 9.5%, #1a6238 9.5%, #1a6238 19%);
+      border:2px solid rgba(255,255,255,.35); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 16px 40px rgba(0,0,0,.30); touch-action:none;
+    }
+    .pitch-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+    .pitch-svg path, .pitch-svg circle, .pitch-svg rect, .pitch-svg line { fill:none; stroke:rgba(255,255,255,.55); stroke-width:0.4; vector-effect:non-scaling-stroke; }
+    .magnet { position:absolute; width:11%; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:grab; user-select:none; box-shadow:0 4px 10px rgba(0,0,0,.45); border:2px solid rgba(255,255,255,.85); font-weight:1000; touch-action:none; z-index:2; }
+    .magnet:active { cursor:grabbing; z-index:5; }
+    .magnet.dragging { box-shadow:0 8px 20px rgba(0,0,0,.6); filter:brightness(1.12); }
+    .magnet .m-num { font-size: clamp(9px, 2.6vw, 13px); line-height:1; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+    .magnet .m-name { position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:2px; font-size:9px; font-weight:800; color:#fff; background:rgba(0,0,0,.55); padding:1px 4px; border-radius:5px; white-space:nowrap; max-width:70px; overflow:hidden; text-overflow:ellipsis; pointer-events:none; }
+    .magnet.team-a { background: radial-gradient(circle at 35% 30%, #4aa3ff, #1861b8); }
+    .magnet.team-b { background: radial-gradient(circle at 35% 30%, #ff6f8e, #b8244a); }
+    .tactics-legend { display:flex; gap:14px; justify-content:center; margin-top:10px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+    .tactics-legend span { display:inline-flex; align-items:center; gap:6px; }
+    .tactics-legend i { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .tactics-legend i.a { background:#4aa3ff; } .tactics-legend i.b { background:#ff6f8e; }
+    .tactics-name-editor { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); }
+    .tactics-name-editor .field { flex:1 1 130px; min-width:110px; }
+    .tactics-name-editor label { display:block; font-size:10px; color:var(--muted); margin-bottom:3px; }
+    .tactics-name-editor input { padding:7px 8px; font-size:12px; border-radius:9px; }
+    .tactics-save-list { display:grid; gap:8px; margin-top:12px; }
+    .tactics-save-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border-radius:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); font-size:12px; }
+    .tactics-save-row button { padding:6px 9px; font-size:11px; }
+
     /* ===== みんなの応援チーム（5人） ===== */
     .pool-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
     .pool-me { display:flex; align-items:center; gap:8px; }
@@ -331,6 +362,7 @@
     .tribute-body blockquote { margin:0 0 9px; padding:8px 12px; border-left:3px solid rgba(247,201,72,.55); background:rgba(255,255,255,.04); border-radius:0 10px 10px 0; color:#eef4fb; font-size:14px; line-height:1.85; }
     .tribute-body blockquote:last-child { margin-bottom:0; }
     .tribute-by { margin-top:8px; font-size:12px; color:var(--muted); font-weight:800; text-align:right; }
+    .tribute-warning { margin:10px 0 0; padding:8px 11px; border-radius:10px; background:rgba(255,111,142,.12); border:1px solid rgba(255,111,142,.30); color:#ffc7d3; font-size:12px; font-weight:800; line-height:1.6; }
   </style>
 </head>
 <body>
@@ -364,6 +396,7 @@
       <blockquote>みんな、悔し涙を流してスタジアムを去るだろう。だけど、朝起きたときには、自分たちを大いに誇りに思ってほしい。きょうは、ただブラジルと試合をしただけじゃない。世界中のサッカーファンから、最高の尊敬を勝ち取ったんだからね。</blockquote>
     </div>
     <div class="tribute-by">— ズラタン・イブラヒモビッチ（試合後コメント）</div>
+    <p class="tribute-warning">⚠️ この記事はフェイクニュースの可能性が高いです。本人が実際に話していない内容が含まれている可能性があります。</p>
   </section>
 
   <header class="hero">
@@ -384,6 +417,41 @@
   </header>
 
   <main class="wrap">
+    <section class="section panel tactics-section" aria-label="戦術ボード">
+      <div class="tactics-head">
+        <div class="section-title" style="margin-bottom:0">
+          <h2>⚽ 戦術ボード</h2>
+          <span class="note">マグネットをドラッグして「こう動けばよかった」を検討。※実際の得点シーンの座標データはないため、標準フォーメームのテンプレートです。</span>
+        </div>
+        <div class="tactics-controls">
+          <select id="formationSelect"></select>
+          <button class="btn secondary" id="tacticsResetBtn" onclick="resetTactics()">↺ リセット</button>
+          <button class="btn" id="tacticsSaveBtn" onclick="saveTacticsSnapshot()">💾 保存（検討中）</button>
+        </div>
+      </div>
+      <div class="pitch-wrap" id="pitchWrap">
+        <svg class="pitch-svg" viewBox="0 0 68 105" preserveAspectRatio="none">
+          <rect x="1" y="1" width="66" height="103"></rect>
+          <line x1="1" y1="52.5" x2="67" y2="52.5"></line>
+          <circle cx="34" cy="52.5" r="9.15"></circle>
+          <circle cx="34" cy="52.5" r="0.4" fill="rgba(255,255,255,.55)"></circle>
+          <rect x="13.84" y="1" width="40.32" height="16.5"></rect>
+          <rect x="24.84" y="1" width="18.32" height="5.5"></rect>
+          <rect x="13.84" y="87.5" width="40.32" height="16.5"></rect>
+          <rect x="24.84" y="98.5" width="18.32" height="5.5"></rect>
+          <circle cx="34" cy="11" r="0.4" fill="rgba(255,255,255,.55)"></circle>
+          <circle cx="34" cy="94" r="0.4" fill="rgba(255,255,255,.55)"></circle>
+        </svg>
+        <div id="magnetLayer"></div>
+      </div>
+      <div class="tactics-legend">
+        <span><i class="a"></i>チームA</span>
+        <span><i class="b"></i>チームB</span>
+      </div>
+      <div class="tactics-name-editor" id="tacticsNameEditor"></div>
+      <div class="tactics-save-list" id="tacticsSaveList"></div>
+    </section>
+
     <section class="section panel pool-section" aria-label="5人の応援チーム">
       <div class="pool-head">
         <div class="section-title" style="margin-bottom:0">
@@ -1392,10 +1460,179 @@ function toast(message){
   window.__toastTimer = setTimeout(() => el.classList.remove('show'), 3600);
 }
 
-Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm });
+/* ===== 戦術ボード（標準フォーメーションのテンプレート。実際の得点シーン座標データはありません） ===== */
+const FORMATIONS = {
+  '4-3-3': [
+    {n:1,x:34,y:97},
+    {n:2,x:58,y:80},{n:3,x:44,y:84},{n:4,x:24,y:84},{n:5,x:10,y:80},
+    {n:6,x:34,y:65},{n:8,x:22,y:57},{n:7 ,x:46,y:57},
+    {n:11,x:12,y:38},{n:9,x:34,y:33},{n:10,x:56,y:38}
+  ],
+  '4-4-2': [
+    {n:1,x:34,y:97},
+    {n:2,x:58,y:80},{n:3,x:44,y:84},{n:4,x:24,y:84},{n:5,x:10,y:80},
+    {n:7,x:58,y:58},{n:8,x:42,y:62},{n:6,x:26,y:62},{n:11,x:10,y:58},
+    {n:9,x:27,y:32},{n:10,x:41,y:32}
+  ],
+  '4-2-3-1': [
+    {n:1,x:34,y:97},
+    {n:2,x:58,y:80},{n:3,x:44,y:84},{n:4,x:24,y:84},{n:5,x:10,y:80},
+    {n:6,x:26,y:65},{n:8,x:42,y:65},
+    {n:11,x:12,y:44},{n:10,x:34,y:40},{n:7,x:56,y:44},
+    {n:9,x:34,y:22}
+  ],
+  '3-5-2': [
+    {n:1,x:34,y:97},
+    {n:4,x:34,y:83},{n:3,x:18,y:85},{n:5,x:50,y:85},
+    {n:2,x:60,y:60},{n:8,x:44,y:60},{n:6,x:34,y:65},{n:7,x:24,y:60},{n:11,x:8,y:60},
+    {n:9,x:27,y:32},{n:10,x:41,y:32}
+  ]
+};
+const TACTICS_STATE = { formation: '4-3-3', names: {}, positions: {} };
+function mirrorForTeamB(pos){ return { n: pos.n, x: 68 - pos.x, y: 105 - pos.y }; }
+function tacticsMagnetId(team, num){ return team + '-' + num; }
+function buildTacticsDefaults(formationKey){
+  const base = FORMATIONS[formationKey] || FORMATIONS['4-3-3'];
+  const positions = {};
+  base.forEach(p => { positions[tacticsMagnetId('a', p.n)] = { x: p.x, y: p.y }; });
+  base.forEach(p => { const m = mirrorForTeamB(p); positions[tacticsMagnetId('b', p.n)] = { x: m.x, y: m.y }; });
+  return positions;
+}
+function loadTacticsNames(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsNames') || '{}'); } catch { return {}; } }
+function saveTacticsNames(){ try { localStorage.setItem('wc2026TacticsNames', JSON.stringify(TACTICS_STATE.names)); } catch {} }
+function loadTacticsSnapshots(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsSnapshots') || '[]'); } catch { return []; } }
+function saveTacticsSnapshots(list){ try { localStorage.setItem('wc2026TacticsSnapshots', JSON.stringify(list)); } catch {} }
+function initTactics(){
+  const sel = document.getElementById('formationSelect');
+  if(!sel) return;
+  sel.innerHTML = Object.keys(FORMATIONS).map(k => `<option value="${k}">${k}</option>`).join('');
+  TACTICS_STATE.formation = FORMATIONS[TACTICS_STATE.formation] ? TACTICS_STATE.formation : '4-3-3';
+  sel.value = TACTICS_STATE.formation;
+  TACTICS_STATE.names = loadTacticsNames();
+  TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+  sel.addEventListener('change', () => {
+    TACTICS_STATE.formation = sel.value;
+    TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+    renderTactics();
+  });
+  renderTactics();
+}
+function resetTactics(){
+  TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+  renderTactics();
+  toast('マグネットを初期配置に戻しました。');
+}
+function magnetLabel(team, num){
+  const nm = TACTICS_STATE.names[tacticsMagnetId(team, num)];
+  return nm && nm.trim() ? nm.trim() : (num === 1 ? 'GK' : String(num));
+}
+function renderTactics(){
+  const layer = document.getElementById('magnetLayer');
+  const editor = document.getElementById('tacticsNameEditor');
+  if(!layer) return;
+  const base = FORMATIONS[TACTICS_STATE.formation] || FORMATIONS['4-3-3'];
+  const nums = base.map(p => p.n);
+  const items = [];
+  ['a','b'].forEach(team => nums.forEach(n => items.push({ team, n })));
+  layer.innerHTML = items.map(({team, n}) => {
+    const id = tacticsMagnetId(team, n);
+    const pos = TACTICS_STATE.positions[id] || { x: 34, y: 52.5 };
+    const label = magnetLabel(team, n);
+    return `<div class="magnet team-${team}" data-id="${id}" style="left:${(pos.x/68*100).toFixed(2)}%; top:${(pos.y/105*100).toFixed(2)}%">
+      <span class="m-num">${n === 1 ? 'GK' : n}</span>
+      <span class="m-name">${htmlEscape(label)}</span>
+    </div>`;
+  }).join('');
+  layer.querySelectorAll('.magnet').forEach(attachMagnetDrag);
+  if(editor){
+    editor.innerHTML = items.map(({team, n}) => {
+      const id = tacticsMagnetId(team, n);
+      const val = TACTICS_STATE.names[id] || '';
+      return `<div class="field"><label>${team === 'a' ? 'A' : 'B'}-${n === 1 ? 'GK' : n}</label><input type="text" maxlength="10" placeholder="選手名" value="${htmlEscape(val)}" oninput="setTacticsName('${id}', this.value)"></div>`;
+    }).join('');
+  }
+}
+function setTacticsName(id, value){
+  TACTICS_STATE.names[id] = value;
+  saveTacticsNames();
+  const el = document.querySelector(`.magnet[data-id="${id}"] .m-name`);
+  if(el){ const [team, n] = id.split('-'); el.textContent = magnetLabel(team, Number(n)); }
+}
+function attachMagnetDrag(el){
+  const id = el.dataset.id;
+  el.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    const wrap = document.getElementById('pitchWrap');
+    const rect = wrap.getBoundingClientRect();
+    el.classList.add('dragging');
+    el.setPointerCapture(ev.pointerId);
+    const move = e => {
+      const xPct = Math.min(100, Math.max(0, (e.clientX - rect.left) / rect.width * 100));
+      const yPct = Math.min(100, Math.max(0, (e.clientY - rect.top) / rect.height * 100));
+      el.style.left = xPct + '%';
+      el.style.top = yPct + '%';
+      TACTICS_STATE.positions[id] = { x: xPct / 100 * 68, y: yPct / 100 * 105 };
+    };
+    const up = e => {
+      move(e);
+      el.classList.remove('dragging');
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  });
+}
+function saveTacticsSnapshot(){
+  const list = loadTacticsSnapshots();
+  const snap = { id: Date.now(), formation: TACTICS_STATE.formation, positions: JSON.parse(JSON.stringify(TACTICS_STATE.positions)), names: JSON.parse(JSON.stringify(TACTICS_STATE.names)), savedAt: new Date().toISOString() };
+  list.unshift(snap);
+  saveTacticsSnapshots(list.slice(0, 20));
+  renderTacticsSaveList();
+  toast('この配置を保存しました（検討中の機能です）。');
+}
+function loadTacticsSnapshot(id){
+  const snap = loadTacticsSnapshots().find(s => s.id === id);
+  if(!snap) return;
+  TACTICS_STATE.formation = snap.formation;
+  TACTICS_STATE.positions = JSON.parse(JSON.stringify(snap.positions));
+  TACTICS_STATE.names = JSON.parse(JSON.stringify(snap.names));
+  saveTacticsNames();
+  const sel = document.getElementById('formationSelect');
+  if(sel) sel.value = TACTICS_STATE.formation;
+  renderTactics();
+  toast('保存した配置を読み込みました。');
+}
+function deleteTacticsSnapshot(id){
+  saveTacticsSnapshots(loadTacticsSnapshots().filter(s => s.id !== id));
+  renderTacticsSaveList();
+}
+function renderTacticsSaveList(){
+  const el = document.getElementById('tacticsSaveList');
+  if(!el) return;
+  const list = loadTacticsSnapshots();
+  if(!list.length){ el.innerHTML = ''; return; }
+  el.innerHTML = list.map(s => {
+    const dt = new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(s.savedAt));
+    return `<div class="tactics-save-row">
+      <span>${dt} ・ ${htmlEscape(s.formation)}</span>
+      <span>
+        <button class="btn secondary" onclick="loadTacticsSnapshot(${s.id})">読込</button>
+        <button class="btn secondary" onclick="deleteTacticsSnapshot(${s.id})">削除</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName });
 
 /* ===== 初期化 ===== */
 function init(){
+  initTactics();
+  renderTacticsSaveList();
+
   const meSel = document.getElementById('meSelect');
   meSel.innerHTML = `<option value="">（指定なし）</option>` + USERS.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
   meSel.value = me;
