@@ -141,6 +141,9 @@
     .tactics-single-editor input { flex:1; padding:8px 10px; font-size:13px; border-radius:9px; }
     .magnet.selected { box-shadow:0 0 0 3px #ffe066, 0 4px 10px rgba(0,0,0,.45); }
     .tactics-bench { display:flex; gap:20px; margin-top:14px; flex-wrap:wrap; }
+    .goal-marker { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; pointer-events:none; z-index:6; }
+    .goal-marker .gm-dot { width:14px; height:14px; border-radius:50%; background:#ffdd33; border:2px solid #7a5b00; box-shadow:0 0 10px rgba(255,221,51,.8); }
+    .goal-marker .gm-label { margin-top:4px; font-size:10px; font-weight:800; color:#fff; background:rgba(0,0,0,.65); padding:2px 6px; border-radius:6px; white-space:nowrap; }
     .bench-col { flex:1 1 240px; }
     .bench-col h4 { margin:0 0 6px; font-size:12px; color:var(--muted); }
     .bench-chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -530,8 +533,11 @@
         </div>
         <div class="tactics-controls">
           <select id="formationSelect"></select>
+          <span class="note" id="formationAutoNote"></span>
           <select id="lineupMatchSelect"></select>
           <button class="btn" id="lineupReflectBtn" onclick="reflectLineup(document.getElementById('lineupMatchSelect').value)">⚡ スタメン反映</button>
+          <select id="goalEventSelect"></select>
+          <button class="btn secondary" id="showGoalBtn" onclick="showGoalMarker()">⚽ ゴール位置</button>
           <button class="btn secondary" id="tacticsResetBtn" onclick="resetTactics()">↺ リセット</button>
           <button class="btn" id="tacticsSaveBtn" onclick="saveTacticsSnapshot()">💾 保存（検討中）</button>
         </div>
@@ -550,6 +556,7 @@
           <circle cx="34" cy="94" r="0.4" fill="rgba(255,255,255,.55)"></circle>
         </svg>
         <div id="magnetLayer"></div>
+        <div class="goal-marker-layer" id="goalMarkerLayer"></div>
       </div>
       <div class="tactics-bench" id="tacticsBench"></div>
       <div class="tactics-legend">
@@ -1500,14 +1507,34 @@ const FORMATIONS = {
     {n:9,x:27,y:32},{n:10,x:41,y:32}
   ]
 };
-const TACTICS_STATE = { formation: '4-3-3', names: {}, positions: {}, selected: null };
+const TACTICS_STATE = { formationA: '4-3-3', formationB: '4-3-3', names: {}, positions: {}, selected: null };
 function mirrorForTeamB(pos){ return { n: pos.n, x: 68 - pos.x, y: 105 - pos.y }; }
 function tacticsMagnetId(team, num){ return team + '-' + num; }
-function buildTacticsDefaults(formationKey){
-  const base = FORMATIONS[formationKey] || FORMATIONS['4-3-3'];
+function autoLayoutFromFormation(formationStr){
+  const lines = String(formationStr || '').split('-').map(Number).filter(n => Number.isFinite(n) && n > 0);
+  if(!lines.length) return null;
+  const positions = [{ n: 1, x: 34, y: 97 }]; // GK
+  let n = 2;
+  const totalLines = lines.length;
+  lines.forEach((count, li) => {
+    const y = 88 - (li / Math.max(1, totalLines - 1)) * 65;
+    for(let i = 0; i < count; i++){
+      const x = count === 1 ? 34 : 8 + (i / (count - 1)) * 52;
+      positions.push({ n: n++, x, y });
+    }
+  });
+  return positions;
+}
+function layoutFor(formationStr){
+  return FORMATIONS[formationStr] || autoLayoutFromFormation(formationStr) || FORMATIONS['4-3-3'];
+}
+function buildTacticsDefaults(){
   const positions = {};
-  base.forEach(p => { positions[tacticsMagnetId('a', p.n)] = { x: p.x, y: p.y }; });
-  base.forEach(p => { const m = mirrorForTeamB(p); positions[tacticsMagnetId('b', p.n)] = { x: m.x, y: m.y }; });
+  layoutFor(TACTICS_STATE.formationA).forEach(p => { positions[tacticsMagnetId('a', p.n)] = { x: p.x, y: p.y }; });
+  layoutFor(TACTICS_STATE.formationB).forEach(p => {
+    const m = mirrorForTeamB(p);
+    positions[tacticsMagnetId('b', m.n)] = { x: m.x, y: m.y };
+  });
   return positions;
 }
 function loadTacticsNames(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsNames') || '{}'); } catch { return {}; } }
@@ -1518,20 +1545,20 @@ function initTactics(){
   const sel = document.getElementById('formationSelect');
   if(!sel) return;
   sel.innerHTML = Object.keys(FORMATIONS).map(k => `<option value="${k}">${k}</option>`).join('');
-  TACTICS_STATE.formation = FORMATIONS[TACTICS_STATE.formation] ? TACTICS_STATE.formation : '4-3-3';
-  sel.value = TACTICS_STATE.formation;
+  sel.value = TACTICS_STATE.formationA;
   TACTICS_STATE.names = loadTacticsNames();
-  TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+  TACTICS_STATE.positions = buildTacticsDefaults();
   initLineupMatchSelect();
   sel.addEventListener('change', () => {
-    TACTICS_STATE.formation = sel.value;
-    TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+    TACTICS_STATE.formationA = sel.value;
+    TACTICS_STATE.formationB = sel.value;
+    TACTICS_STATE.positions = buildTacticsDefaults();
     renderTactics();
   });
   renderTactics();
 }
 function resetTactics(){
-  TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+  TACTICS_STATE.positions = buildTacticsDefaults();
   renderTactics();
   toast('マグネットを初期配置に戻しました。');
 }
@@ -1567,13 +1594,21 @@ async function findEspnEventId(matchId){
   });
   return hit ? hit.id : null;
 }
+const MATCH_SUMMARY_CACHE = {};
+async function fetchMatchSummary(matchId){
+  if(MATCH_SUMMARY_CACHE[matchId]) return MATCH_SUMMARY_CACHE[matchId];
+  const eventId = await findEspnEventId(matchId);
+  if(!eventId) return null;
+  const sum = await espnFetchJson(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`);
+  MATCH_SUMMARY_CACHE[matchId] = sum;
+  return sum;
+}
 async function reflectLineup(matchId){
   const btn = document.getElementById('lineupReflectBtn');
   if(btn){ btn.disabled = true; btn.textContent = '取得中...'; }
   try {
-    const eventId = await findEspnEventId(matchId);
-    if(!eventId){ toast('この試合のESPNデータが見つかりませんでした。'); return; }
-    const sum = await espnFetchJson(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`);
+    const sum = await fetchMatchSummary(matchId);
+    if(!sum){ toast('この試合のESPNデータが見つかりませんでした。'); return; }
     const rosters = sum.rosters || [];
     if(rosters.length!==2 || rosters.every(r=>(r.roster||[]).length===0)){
       toast('スタメンはまだ発表されていません（キックオフ直前に反映してください）。');
@@ -1592,16 +1627,68 @@ async function reflectLineup(matchId){
           benches[side].push({ jersey:p.jersey, name:label });
         }
       });
-      if(r.formation && FORMATIONS[r.formation]) TACTICS_STATE.formation = r.formation;
+      if(r.formation){
+        if(side === 'a') TACTICS_STATE.formationA = r.formation;
+        else TACTICS_STATE.formationB = r.formation;
+      }
     });
     saveTacticsNames();
-    document.getElementById('formationSelect').value = TACTICS_STATE.formation;
-    TACTICS_STATE.positions = buildTacticsDefaults(TACTICS_STATE.formation);
+    const formSel = document.getElementById('formationSelect');
+    if(formSel && FORMATIONS[TACTICS_STATE.formationA]) formSel.value = TACTICS_STATE.formationA;
+    const note = document.getElementById('formationAutoNote');
+    if(note) note.textContent = `A: ${TACTICS_STATE.formationA} / B: ${TACTICS_STATE.formationB}`;
+    TACTICS_STATE.positions = buildTacticsDefaults();
     renderTactics();
     renderTacticsBench(benches);
+    await initGoalMarkers(matchId);
     toast('スタメンを反映しました。');
   } catch(e){ toast('スタメン取得に失敗しました。'); console.error(e); }
   finally { if(btn){ btn.disabled=false; btn.textContent='⚡ スタメン反映'; } }
+}
+function teamSideForEspnTeamId(sum, espnTeamId){
+  const home = sum.rosters?.find(r=>r.homeAway==='home');
+  const away = sum.rosters?.find(r=>r.homeAway==='away');
+  if(home?.team?.id === String(espnTeamId)) return 'a';
+  if(away?.team?.id === String(espnTeamId)) return 'b';
+  return null;
+}
+function goalMagnetPosition(side, fieldPositionX, fieldPositionY){
+  const fx = Number(fieldPositionX), fy = Number(fieldPositionY);
+  if(!Number.isFinite(fx) || !Number.isFinite(fy)) return null;
+  // side='a'は自陣y=105→相手ゴールy=0方向、side='b'はその逆でx/yとも鏡映
+  return side === 'a'
+    ? { x: 68 * (fy/100), y: 105 * (1 - fx/100) }
+    : { x: 68 * (1 - fy/100), y: 105 * (fx/100) };
+}
+async function initGoalMarkers(matchId){
+  const sel = document.getElementById('goalEventSelect');
+  if(!sel) return;
+  const sum = await fetchMatchSummary(matchId);
+  const goals = (sum?.keyEvents||[]).filter(e=>e.scoringPlay);
+  if(!goals.length){ sel.innerHTML = '<option value="">ゴールなし</option>'; sel.dataset.matchId = matchId; return; }
+  sel.innerHTML = goals.map((g,i) => {
+    const scorer = g.participants?.[0]?.athlete?.displayName || g.shortText || '';
+    return `<option value="${i}">${g.clock?.displayValue||''} ${scorer}</option>`;
+  }).join('');
+  sel.dataset.matchId = matchId;
+}
+function showGoalMarker(){
+  const sel = document.getElementById('goalEventSelect');
+  const layer = document.getElementById('goalMarkerLayer');
+  if(!sel || !layer) return;
+  const matchId = sel.dataset.matchId;
+  const sum = MATCH_SUMMARY_CACHE[matchId];
+  if(!sum){ toast('先に「⚡ スタメン反映」で試合データを取得してください。'); return; }
+  const goals = (sum.keyEvents||[]).filter(e=>e.scoringPlay);
+  const g = goals[Number(sel.value)];
+  if(!g){ layer.innerHTML=''; return; }
+  const side = teamSideForEspnTeamId(sum, g.team?.id);
+  const pos = goalMagnetPosition(side, g.fieldPositionX, g.fieldPositionY);
+  if(!pos){ toast('この得点には位置データがありませんでした。'); layer.innerHTML=''; return; }
+  const scorer = g.participants?.[0]?.athlete?.displayName || '';
+  layer.innerHTML = `<div class="goal-marker" style="left:${(pos.x/68*100).toFixed(2)}%; top:${(pos.y/105*100).toFixed(2)}%">
+    <span class="gm-dot"></span><span class="gm-label">⚽ ${htmlEscape(scorer)}（${g.clock?.displayValue||''}）</span>
+  </div>`;
 }
 function renderTacticsBench(benches){
   const el = document.getElementById('tacticsBench');
@@ -1618,10 +1705,9 @@ function magnetLabel(team, num){
 function renderTactics(){
   const layer = document.getElementById('magnetLayer');
   if(!layer) return;
-  const base = FORMATIONS[TACTICS_STATE.formation] || FORMATIONS['4-3-3'];
-  const nums = base.map(p => p.n);
   const items = [];
-  ['a','b'].forEach(team => nums.forEach(n => items.push({ team, n })));
+  layoutFor(TACTICS_STATE.formationA).forEach(p => items.push({ team:'a', n:p.n }));
+  layoutFor(TACTICS_STATE.formationB).forEach(p => items.push({ team:'b', n:p.n }));
   layer.innerHTML = items.map(({team, n}) => {
     const id = tacticsMagnetId(team, n);
     const pos = TACTICS_STATE.positions[id] || { x: 34, y: 52.5 };
@@ -1693,7 +1779,7 @@ function attachMagnetDrag(el){
 }
 function saveTacticsSnapshot(){
   const list = loadTacticsSnapshots();
-  const snap = { id: Date.now(), formation: TACTICS_STATE.formation, positions: JSON.parse(JSON.stringify(TACTICS_STATE.positions)), names: JSON.parse(JSON.stringify(TACTICS_STATE.names)), savedAt: new Date().toISOString() };
+  const snap = { id: Date.now(), formationA: TACTICS_STATE.formationA, formationB: TACTICS_STATE.formationB, positions: JSON.parse(JSON.stringify(TACTICS_STATE.positions)), names: JSON.parse(JSON.stringify(TACTICS_STATE.names)), savedAt: new Date().toISOString() };
   list.unshift(snap);
   saveTacticsSnapshots(list.slice(0, 20));
   renderTacticsSaveList();
@@ -1702,12 +1788,13 @@ function saveTacticsSnapshot(){
 function loadTacticsSnapshot(id){
   const snap = loadTacticsSnapshots().find(s => s.id === id);
   if(!snap) return;
-  TACTICS_STATE.formation = snap.formation;
+  TACTICS_STATE.formationA = snap.formationA || snap.formation || '4-3-3';
+  TACTICS_STATE.formationB = snap.formationB || snap.formation || '4-3-3';
   TACTICS_STATE.positions = JSON.parse(JSON.stringify(snap.positions));
   TACTICS_STATE.names = JSON.parse(JSON.stringify(snap.names));
   saveTacticsNames();
   const sel = document.getElementById('formationSelect');
-  if(sel) sel.value = TACTICS_STATE.formation;
+  if(sel && FORMATIONS[TACTICS_STATE.formationA]) sel.value = TACTICS_STATE.formationA;
   renderTactics();
   toast('保存した配置を読み込みました。');
 }
@@ -1722,8 +1809,9 @@ function renderTacticsSaveList(){
   if(!list.length){ el.innerHTML = ''; return; }
   el.innerHTML = list.map(s => {
     const dt = new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(s.savedAt));
+    const formLabel = (s.formationA || s.formation || '?') + ' / ' + (s.formationB || s.formation || '?');
     return `<div class="tactics-save-row">
-      <span>${dt} ・ ${htmlEscape(s.formation)}</span>
+      <span>${dt} ・ ${htmlEscape(formLabel)}</span>
       <span>
         <button class="btn secondary" onclick="loadTacticsSnapshot(${s.id})">読込</button>
         <button class="btn secondary" onclick="deleteTacticsSnapshot(${s.id})">削除</button>
@@ -1732,7 +1820,7 @@ function renderTacticsSaveList(){
   }).join('');
 }
 
-Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet });
+Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker });
 
 /* ===== 初期化 ===== */
 function init(){
