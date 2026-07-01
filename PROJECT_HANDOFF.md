@@ -84,6 +84,7 @@ push後、GitHub Pagesのビルド完了は `gh api repos/sfuskusoska/worldcup20
 
 ## 直近のコミット履歴（新しい順）
 ```
+1ad9efd Add bench<->starter swap via drag-and-drop on the tactics board
 7c7e44c Independent per-team formations + auto-layout; goal position marker
 3c55dc5 Update PROJECT_HANDOFF.md commit history after lineup-reflect feature
 bc6e2aa Add ESPN lineup auto-reflect + bench, single-select magnet name editor
