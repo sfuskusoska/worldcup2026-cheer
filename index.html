@@ -121,7 +121,7 @@
     .pitch-wrap { position:relative; width:100%; max-width:760px; aspect-ratio: 68 / 105; margin:0 auto; border-radius:16px; overflow:hidden; background:
         linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.05)),
         repeating-linear-gradient(0deg, #1c6b3c 0, #1c6b3c 9.5%, #1a6238 9.5%, #1a6238 19%);
-      border:2px solid rgba(255,255,255,.35); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 16px 40px rgba(0,0,0,.30); touch-action:none;
+      border:2px solid rgba(255,255,255,.35); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 16px 40px rgba(0,0,0,.30);
     }
     .pitch-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
     .pitch-svg path, .pitch-svg circle, .pitch-svg rect, .pitch-svg line { fill:none; stroke:rgba(255,255,255,.55); stroke-width:0.4; vector-effect:non-scaling-stroke; }
@@ -1787,6 +1787,12 @@ function magnetLabel(team, num){
   const nm = TACTICS_STATE.names[tacticsMagnetId(team, num)];
   return nm && nm.trim() ? nm.trim() : (num === 1 ? 'GK' : String(num));
 }
+function magnetNumberLabel(team, num){
+  const id = tacticsMagnetId(team, num);
+  const jersey = TACTICS_STATE.starterJersey[id];
+  if(jersey !== undefined && jersey !== null && String(jersey).trim()) return String(jersey).trim();
+  return num === 1 ? 'GK' : String(num);
+}
 function renderTactics(){
   const layer = document.getElementById('magnetLayer');
   if(!layer) return;
@@ -1797,9 +1803,10 @@ function renderTactics(){
     const id = tacticsMagnetId(team, n);
     const pos = TACTICS_STATE.positions[id] || { x: 34, y: 52.5 };
     const label = magnetLabel(team, n);
+    const numberLabel = magnetNumberLabel(team, n);
     const selectedCls = TACTICS_STATE.selected === id ? ' selected' : '';
     return `<div class="magnet team-${team}${selectedCls}" data-id="${id}" style="left:${(pos.x/68*100).toFixed(2)}%; top:${(pos.y/105*100).toFixed(2)}%">
-      <span class="m-num">${n === 1 ? 'GK' : n}</span>
+      <span class="m-num">${htmlEscape(numberLabel)}</span>
       <span class="m-name">${htmlEscape(label)}</span>
     </div>`;
   }).join('');
