@@ -82,7 +82,8 @@ push後、GitHub Pagesのビルド完了は `gh api repos/sfuskusoska/worldcup20
 
 ## 直近のコミット履歴（新しい順）
 ```
-(このコミット) Formation A/B independent + auto-layout for non-preset formations; goal marker
+7c7e44c Independent per-team formations + auto-layout; goal position marker
+3c55dc5 Update PROJECT_HANDOFF.md commit history after lineup-reflect feature
 bc6e2aa Add ESPN lineup auto-reflect + bench, single-select magnet name editor
 a6ac46d Move tactics board to bottom; halve magnet size; harden drag capture
 10d1082 Add PROJECT_HANDOFF.md for quick context loading in a new session
