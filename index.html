@@ -152,9 +152,17 @@
     .bench-chip.dragging { opacity:.35; }
     .magnet.drop-target { box-shadow:0 0 0 3px #5cf0c0, 0 4px 10px rgba(0,0,0,.45); }
     .bench-drag-ghost { position:fixed; z-index:50; pointer-events:none; padding:4px 8px; border-radius:999px; background:rgba(0,0,0,.85); color:#fff; font-size:11px; font-weight:800; border:1px solid rgba(255,255,255,.4); transform:translate(-50%,-50%); white-space:nowrap; }
-    .tactics-save-list { display:grid; gap:8px; margin-top:12px; }
-    .tactics-save-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border-radius:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); font-size:12px; }
+    .tactics-save-list { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .tactics-save-row { display:inline-flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); font-size:12px; }
     .tactics-save-row button { padding:6px 9px; font-size:11px; }
+    .arrow-layer { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:4; }
+    #pitchWrap.draw-mode #magnetLayer { pointer-events:none; }
+    #pitchWrap.draw-mode { cursor:crosshair; }
+    #magnetLayer.animating .magnet { transition: left 1s ease, top 1s ease; }
+    .tactics-frame-list { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+    .frame-chip { padding:4px 8px; font-size:11px; }
+    .m-flag { position:absolute; bottom:-4px; right:-4px; width:14px; height:10px; border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.6); }
+    .gif-note { font-size:11px; color:var(--muted); }
 
     /* ===== みんなの応援チーム（5人） ===== */
     .pool-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
@@ -542,7 +550,23 @@
           <select id="goalEventSelect"></select>
           <button class="btn secondary" id="showGoalBtn" onclick="showGoalMarker()">⚽ ゴール位置</button>
           <button class="btn secondary" id="tacticsResetBtn" onclick="resetTactics()">↺ リセット</button>
-          <button class="btn" id="tacticsSaveBtn" onclick="saveTacticsSnapshot()">💾 保存（検討中）</button>
+          <button class="btn secondary" onclick="undoTactics()">↶ Undo</button>
+          <button class="btn secondary" onclick="redoTactics()">↷ Redo</button>
+          <button class="btn secondary" id="drawModeBtn" onclick="toggleDrawMode()">✏️ 矢印を描く</button>
+          <button class="btn secondary" onclick="clearArrows()">🧹 矢印を消す</button>
+          <select id="setPieceSelect">
+            <option value="corner_attack">コーナー（攻撃側）</option>
+            <option value="corner_defense">コーナー（守備側）</option>
+            <option value="freekick_attack_wide">FK（攻撃・サイド）</option>
+          </select>
+          <select id="setPieceSideSelect"><option value="a">チームA</option><option value="b">チームB</option></select>
+          <button class="btn secondary" onclick="applySetPiece(document.getElementById('setPieceSelect').value, document.getElementById('setPieceSideSelect').value)">📐 セットプレー適用</button>
+          <button class="btn secondary" onclick="recordFrame()">📍 フレーム記録</button>
+          <button class="btn" onclick="playFrames()">▶️ 再生</button>
+          <button class="btn secondary" onclick="exportTacticsPng()">🖼️ PNG保存</button>
+          <button class="btn secondary" onclick="exportFramesAsGif()">🎞️ GIF書き出し</button>
+          <span class="note gif-note">GIFは記録したフレーム数×約1秒かかります（重い処理）</span>
+          <button class="btn" id="tacticsSaveBtn" onclick="saveTacticsSnapshot()">💾 このプレーを保存</button>
         </div>
       </div>
       <div class="pitch-wrap" id="pitchWrap">
@@ -558,9 +582,11 @@
           <circle cx="34" cy="11" r="0.4" fill="rgba(255,255,255,.55)"></circle>
           <circle cx="34" cy="94" r="0.4" fill="rgba(255,255,255,.55)"></circle>
         </svg>
+        <svg class="arrow-layer" id="arrowLayer" viewBox="0 0 68 105" preserveAspectRatio="none"></svg>
         <div id="magnetLayer"></div>
         <div class="goal-marker-layer" id="goalMarkerLayer"></div>
       </div>
+      <div class="tactics-frame-list" id="tacticsFrameList"></div>
       <div class="tactics-bench" id="tacticsBench"></div>
       <div class="tactics-legend">
         <span><i class="a"></i>チームA</span>
@@ -568,7 +594,7 @@
       </div>
       <div class="tactics-single-editor" id="tacticsSingleEditor" style="display:none">
         <label id="tacticsSingleLabel"></label>
-        <input type="text" id="tacticsSingleInput" maxlength="10" placeholder="選手名を入力" oninput="setTacticsName(TACTICS_STATE.selected, this.value)">
+        <input type="text" id="tacticsSingleInput" maxlength="10" placeholder="選手名を入力" onfocus="pushHistory()" oninput="setTacticsName(TACTICS_STATE.selected, this.value)">
       </div>
       <div class="tactics-save-list" id="tacticsSaveList"></div>
     </section>
@@ -596,6 +622,8 @@
 
   <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
 /* =========================================================================
    応援チームの配分（ホストがここで決めます）
@@ -1510,7 +1538,13 @@ const FORMATIONS = {
     {n:9,x:27,y:32},{n:10,x:41,y:32}
   ]
 };
-const TACTICS_STATE = { formationA: '4-3-3', formationB: '4-3-3', names: {}, starterJersey: {}, benches: { a: [], b: [] }, positions: {}, selected: null };
+const TACTICS_STATE = {
+  formationA: '4-3-3', formationB: '4-3-3', names: {}, starterJersey: {}, benches: { a: [], b: [] }, positions: {}, selected: null,
+  arrows: [], drawMode: false, drawColor: '#ffe066',
+  frames: [], playing: false,
+  history: [], future: [],
+  teamFlags: { a: null, b: null }
+};
 function mirrorForTeamB(pos){ return { n: pos.n, x: 68 - pos.x, y: 105 - pos.y }; }
 function tacticsMagnetId(team, num){ return team + '-' + num; }
 function autoLayoutFromFormation(formationStr){
@@ -1556,6 +1590,8 @@ function initTactics(){
   TACTICS_STATE.names = loadTacticsNames();
   TACTICS_STATE.starterJersey = loadTacticsJersey();
   TACTICS_STATE.benches = loadTacticsBenches();
+  TACTICS_STATE.arrows = loadTacticsArrows();
+  TACTICS_STATE.frames = loadTacticsFrames();
   TACTICS_STATE.positions = buildTacticsDefaults();
   initLineupMatchSelect();
   sel.addEventListener('change', () => {
@@ -1564,10 +1600,14 @@ function initTactics(){
     TACTICS_STATE.positions = buildTacticsDefaults();
     renderTactics();
   });
+  attachArrowDrawing();
   renderTactics();
   renderTacticsBench();
+  renderArrows(TACTICS_STATE.arrows);
+  renderFrameList();
 }
 function resetTactics(){
+  pushHistory();
   TACTICS_STATE.positions = buildTacticsDefaults();
   renderTactics();
   toast('マグネットを初期配置に戻しました。');
@@ -1625,6 +1665,8 @@ async function reflectLineup(matchId){
       return;
     }
     const home = rosters.find(r=>r.homeAway==='home'), away = rosters.find(r=>r.homeAway==='away');
+    TACTICS_STATE.teamFlags.a = home ? teamIdFromEspn({ team: home.team }) : null;
+    TACTICS_STATE.teamFlags.b = away ? teamIdFromEspn({ team: away.team }) : null;
     const benches = { a:[], b:[] };
     [['a',home],['b',away]].forEach(([side, r])=>{
       if(!r) return;
@@ -1805,9 +1847,12 @@ function renderTactics(){
     const label = magnetLabel(team, n);
     const numberLabel = magnetNumberLabel(team, n);
     const selectedCls = TACTICS_STATE.selected === id ? ' selected' : '';
+    const flagCode = TACTICS_STATE.teamFlags?.[team];
+    const flagImg = flagCode && TEAMS[flagCode] ? `<img class="m-flag" src="${TEAMS[flagCode].flag}" alt="">` : '';
     return `<div class="magnet team-${team}${selectedCls}" data-id="${id}" style="left:${(pos.x/68*100).toFixed(2)}%; top:${(pos.y/105*100).toFixed(2)}%">
       <span class="m-num">${htmlEscape(numberLabel)}</span>
       <span class="m-name">${htmlEscape(label)}</span>
+      ${flagImg}
     </div>`;
   }).join('');
   layer.querySelectorAll('.magnet').forEach(attachMagnetDrag);
@@ -1841,7 +1886,9 @@ function renderTacticsSingleEditor(){
 function attachMagnetDrag(el){
   const id = el.dataset.id;
   el.addEventListener('pointerdown', ev => {
+    if(TACTICS_STATE.drawMode) return;
     ev.preventDefault();
+    pushHistory();
     const wrap = document.getElementById('pitchWrap');
     const rect = wrap.getBoundingClientRect();
     el.classList.add('dragging');
@@ -1869,13 +1916,27 @@ function attachMagnetDrag(el){
     el.addEventListener('pointercancel', up);
   });
 }
+function nextTacticsSnapshotId(list){
+  let id = Date.now();
+  while(list.some(s => s.id === id)) id++; // 同一ミリ秒内の連続保存でもID衝突しないように
+  return id;
+}
 function saveTacticsSnapshot(){
   const list = loadTacticsSnapshots();
-  const snap = { id: Date.now(), formationA: TACTICS_STATE.formationA, formationB: TACTICS_STATE.formationB, positions: JSON.parse(JSON.stringify(TACTICS_STATE.positions)), names: JSON.parse(JSON.stringify(TACTICS_STATE.names)), savedAt: new Date().toISOString() };
+  const snap = {
+    id: nextTacticsSnapshotId(list),
+    formationA: TACTICS_STATE.formationA, formationB: TACTICS_STATE.formationB,
+    positions: JSON.parse(JSON.stringify(TACTICS_STATE.positions)),
+    names: JSON.parse(JSON.stringify(TACTICS_STATE.names)),
+    arrows: JSON.parse(JSON.stringify(TACTICS_STATE.arrows||[])),
+    frames: JSON.parse(JSON.stringify(TACTICS_STATE.frames||[])),
+    label: `プレー${list.length+1}`,
+    savedAt: new Date().toISOString()
+  };
   list.unshift(snap);
   saveTacticsSnapshots(list.slice(0, 20));
   renderTacticsSaveList();
-  toast('この配置を保存しました（検討中の機能です）。');
+  toast('この配置を保存しました。');
 }
 function loadTacticsSnapshot(id){
   const snap = loadTacticsSnapshots().find(s => s.id === id);
@@ -1884,11 +1945,13 @@ function loadTacticsSnapshot(id){
   TACTICS_STATE.formationB = snap.formationB || snap.formation || '4-3-3';
   TACTICS_STATE.positions = JSON.parse(JSON.stringify(snap.positions));
   TACTICS_STATE.names = JSON.parse(JSON.stringify(snap.names));
-  saveTacticsNames();
+  TACTICS_STATE.arrows = JSON.parse(JSON.stringify(snap.arrows||[]));
+  TACTICS_STATE.frames = JSON.parse(JSON.stringify(snap.frames||[]));
+  saveTacticsNames(); saveTacticsArrows(); saveTacticsFrames();
   const sel = document.getElementById('formationSelect');
   if(sel && FORMATIONS[TACTICS_STATE.formationA]) sel.value = TACTICS_STATE.formationA;
-  renderTactics();
-  toast('保存した配置を読み込みました。');
+  renderTactics(); renderArrows(TACTICS_STATE.arrows); renderFrameList();
+  toast('プレーを読み込みました。');
 }
 function deleteTacticsSnapshot(id){
   saveTacticsSnapshots(loadTacticsSnapshots().filter(s => s.id !== id));
@@ -1900,10 +1963,9 @@ function renderTacticsSaveList(){
   const list = loadTacticsSnapshots();
   if(!list.length){ el.innerHTML = ''; return; }
   el.innerHTML = list.map(s => {
-    const dt = new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(s.savedAt));
-    const formLabel = (s.formationA || s.formation || '?') + ' / ' + (s.formationB || s.formation || '?');
+    const label = s.label || ((s.formationA || s.formation || '?') + ' / ' + (s.formationB || s.formation || '?'));
     return `<div class="tactics-save-row">
-      <span>${dt} ・ ${htmlEscape(formLabel)}</span>
+      <span>${htmlEscape(label)}</span>
       <span>
         <button class="btn secondary" onclick="loadTacticsSnapshot(${s.id})">読込</button>
         <button class="btn secondary" onclick="deleteTacticsSnapshot(${s.id})">削除</button>
@@ -1912,7 +1974,187 @@ function renderTacticsSaveList(){
   }).join('');
 }
 
-Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker });
+/* ===== Undo/Redo ===== */
+function pushHistory(){
+  TACTICS_STATE.history.push(JSON.stringify({ positions:TACTICS_STATE.positions, names:TACTICS_STATE.names, arrows:TACTICS_STATE.arrows }));
+  if(TACTICS_STATE.history.length > 30) TACTICS_STATE.history.shift();
+  TACTICS_STATE.future = [];
+}
+function undoTactics(){
+  if(!TACTICS_STATE.history.length) return;
+  TACTICS_STATE.future.push(JSON.stringify({ positions:TACTICS_STATE.positions, names:TACTICS_STATE.names, arrows:TACTICS_STATE.arrows }));
+  const prev = JSON.parse(TACTICS_STATE.history.pop());
+  Object.assign(TACTICS_STATE, prev);
+  renderTactics(); renderArrows(TACTICS_STATE.arrows); saveTacticsNames(); saveTacticsArrows();
+}
+function redoTactics(){
+  if(!TACTICS_STATE.future.length) return;
+  TACTICS_STATE.history.push(JSON.stringify({ positions:TACTICS_STATE.positions, names:TACTICS_STATE.names, arrows:TACTICS_STATE.arrows }));
+  const next = JSON.parse(TACTICS_STATE.future.pop());
+  Object.assign(TACTICS_STATE, next);
+  renderTactics(); renderArrows(TACTICS_STATE.arrows); saveTacticsNames(); saveTacticsArrows();
+}
+
+/* ===== 矢印・ライン描画 ===== */
+function toggleDrawMode(){
+  TACTICS_STATE.drawMode = !TACTICS_STATE.drawMode;
+  const wrap = document.getElementById('pitchWrap');
+  wrap.classList.toggle('draw-mode', TACTICS_STATE.drawMode);
+  const btn = document.getElementById('drawModeBtn');
+  if(btn) btn.textContent = TACTICS_STATE.drawMode ? '✅ 描画モード中' : '✏️ 矢印を描く';
+}
+function attachArrowDrawing(){
+  const wrap = document.getElementById('pitchWrap');
+  wrap.addEventListener('pointerdown', ev => {
+    if(!TACTICS_STATE.drawMode || ev.target.closest('.magnet')) return;
+    const rect = wrap.getBoundingClientRect();
+    const toPitch = e => ({ x:(e.clientX-rect.left)/rect.width*68, y:(e.clientY-rect.top)/rect.height*105 });
+    const start = toPitch(ev);
+    const move = e => {
+      const cur = toPitch(e);
+      renderArrows([...TACTICS_STATE.arrows, { x1:start.x, y1:start.y, x2:cur.x, y2:cur.y, color:TACTICS_STATE.drawColor }]);
+    };
+    const up = e => {
+      const cur = toPitch(e);
+      wrap.removeEventListener('pointermove', move);
+      if(Math.hypot(cur.x-start.x, cur.y-start.y) > 1.5){
+        pushHistory();
+        TACTICS_STATE.arrows.push({ x1:start.x, y1:start.y, x2:cur.x, y2:cur.y, color:TACTICS_STATE.drawColor });
+        saveTacticsArrows();
+      }
+      renderArrows(TACTICS_STATE.arrows);
+    };
+    wrap.addEventListener('pointermove', move);
+    wrap.addEventListener('pointerup', up, { once:true });
+  });
+}
+function renderArrows(list){
+  const svg = document.getElementById('arrowLayer');
+  if(!svg) return;
+  svg.innerHTML = `<defs><marker id="arrowHead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="currentColor"/></marker></defs>` +
+    list.map(a => `<line x1="${a.x1}" y1="${a.y1}" x2="${a.x2}" y2="${a.y2}" stroke="${a.color}" stroke-width="0.6" marker-end="url(#arrowHead)" style="color:${a.color}"/>`).join('');
+}
+function clearArrows(){ pushHistory(); TACTICS_STATE.arrows = []; saveTacticsArrows(); renderArrows([]); }
+function saveTacticsArrows(){ try{ localStorage.setItem('wc2026TacticsArrows', JSON.stringify(TACTICS_STATE.arrows)); }catch{} }
+function loadTacticsArrows(){ try{ return JSON.parse(localStorage.getItem('wc2026TacticsArrows')||'[]'); }catch{ return []; } }
+
+/* ===== アニメーション（フレーム記録・再生） ===== */
+function applyPositionsToDom(){
+  document.querySelectorAll('#magnetLayer .magnet').forEach(el => {
+    const pos = TACTICS_STATE.positions[el.dataset.id];
+    if(!pos) return;
+    el.style.left = (pos.x/68*100).toFixed(2) + '%';
+    el.style.top = (pos.y/105*100).toFixed(2) + '%';
+  });
+}
+function recordFrame(){
+  TACTICS_STATE.frames.push({ positions: JSON.parse(JSON.stringify(TACTICS_STATE.positions)) });
+  renderFrameList(); saveTacticsFrames();
+  toast(`フレーム${TACTICS_STATE.frames.length}を記録しました。`);
+}
+function renderFrameList(){
+  const el = document.getElementById('tacticsFrameList');
+  if(!el) return;
+  el.innerHTML = TACTICS_STATE.frames.map((f,i) => `<button class="btn secondary frame-chip" onclick="jumpToFrame(${i})">F${i+1}</button>`).join('')
+    + (TACTICS_STATE.frames.length ? `<button class="btn secondary" onclick="deleteLastFrame()">末尾削除</button>` : '');
+}
+function jumpToFrame(i){
+  const f = TACTICS_STATE.frames[i];
+  if(!f) return;
+  TACTICS_STATE.positions = JSON.parse(JSON.stringify(f.positions));
+  renderTactics();
+}
+function deleteLastFrame(){ TACTICS_STATE.frames.pop(); renderFrameList(); saveTacticsFrames(); }
+async function playFrames(){
+  if(!TACTICS_STATE.frames.length || TACTICS_STATE.playing) return;
+  TACTICS_STATE.playing = true;
+  const layer = document.getElementById('magnetLayer');
+  layer.classList.add('animating');
+  for(const f of TACTICS_STATE.frames){
+    TACTICS_STATE.positions = JSON.parse(JSON.stringify(f.positions));
+    applyPositionsToDom();
+    await new Promise(r => setTimeout(r, 1200));
+  }
+  layer.classList.remove('animating');
+  renderTactics();
+  TACTICS_STATE.playing = false;
+}
+function saveTacticsFrames(){ try{ localStorage.setItem('wc2026TacticsFrames', JSON.stringify(TACTICS_STATE.frames)); }catch{} }
+function loadTacticsFrames(){ try{ return JSON.parse(localStorage.getItem('wc2026TacticsFrames')||'[]'); }catch{ return []; } }
+
+/* ===== セットプレーテンプレート（叩き台の座標。実戦のセオリーそのものではなく、後で微調整する前提の初期値） ===== */
+const SET_PIECE_PRESETS = {
+  corner_attack: [
+    {n:1,x:34,y:12},{n:5,x:26,y:8},{n:4,x:30,y:6},{n:3,x:38,y:6},{n:2,x:44,y:8},
+    {n:6,x:50,y:20},{n:8,x:20,y:15},{n:7,x:34,y:4},{n:9,x:30,y:3},{n:10,x:38,y:3},{n:11,x:60,y:30}
+  ],
+  corner_defense: [
+    {n:1,x:34,y:3},{n:2,x:28,y:6},{n:3,x:32,y:6},{n:4,x:36,y:6},{n:5,x:40,y:6},
+    {n:6,x:44,y:8},{n:7,x:34,y:14},{n:8,x:26,y:12},{n:9,x:60,y:40},{n:10,x:56,y:35},{n:11,x:20,y:12}
+  ],
+  freekick_attack_wide: [
+    {n:1,x:34,y:97},{n:2,x:58,y:80},{n:3,x:44,y:84},{n:4,x:24,y:84},{n:5,x:10,y:80},
+    {n:6,x:34,y:60},{n:7,x:46,y:40},{n:8,x:22,y:45},{n:9,x:32,y:15},{n:10,x:38,y:15},{n:11,x:44,y:10}
+  ]
+};
+function applySetPiece(key, side){
+  const preset = SET_PIECE_PRESETS[key];
+  if(!preset) return;
+  pushHistory();
+  preset.forEach(p => {
+    const id = tacticsMagnetId(side, p.n);
+    TACTICS_STATE.positions[id] = side === 'a' ? { x:p.x, y:p.y } : { x:68-p.x, y:105-p.y };
+  });
+  renderTactics();
+  toast('セットプレー配置を適用しました。');
+}
+
+/* ===== PNG / GIF 書き出し ===== */
+function exportTacticsPng(){
+  const target = document.querySelector('.tactics-section');
+  html2canvas(target, { backgroundColor:'#0b3d1f', scale:2 }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `tactics-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+let GIF_WORKER_BLOB_URL = null;
+async function getGifWorkerScriptUrl(){
+  // gif.jsのworkerはCDNの別オリジンURLを直接渡すとブラウザのセキュリティ制約で
+  // Worker生成に失敗するため、一度fetchしてBlob URL化してから渡す
+  if(GIF_WORKER_BLOB_URL) return GIF_WORKER_BLOB_URL;
+  const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+  const text = await res.text();
+  GIF_WORKER_BLOB_URL = URL.createObjectURL(new Blob([text], { type: 'application/javascript' }));
+  return GIF_WORKER_BLOB_URL;
+}
+async function exportFramesAsGif(){
+  if(!TACTICS_STATE.frames.length){ toast('先にフレームを記録してください。'); return; }
+  toast('GIFを作成中…（少し時間がかかります）');
+  let workerScript;
+  try { workerScript = await getGifWorkerScriptUrl(); }
+  catch(e){ toast('GIFワーカーの読み込みに失敗しました。通信環境を確認してください。'); console.error(e); return; }
+  const gif = new GIF({ workers:2, quality:10, workerScript });
+  const target = document.querySelector('.tactics-section');
+  for(const f of TACTICS_STATE.frames){
+    TACTICS_STATE.positions = JSON.parse(JSON.stringify(f.positions));
+    applyPositionsToDom();
+    await new Promise(r => setTimeout(r, 60));
+    const canvas = await html2canvas(target, { backgroundColor:'#0b3d1f', scale:1 });
+    gif.addFrame(canvas, { delay:900 });
+  }
+  gif.on('finished', blob => {
+    const link = document.createElement('a');
+    link.download = `tactics-${Date.now()}.gif`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+  });
+  gif.render();
+  renderTactics();
+}
+
+Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker, toggleDrawMode, clearArrows, recordFrame, jumpToFrame, deleteLastFrame, playFrames, undoTactics, redoTactics, applySetPiece, exportTacticsPng, exportFramesAsGif });
 
 /* ===== 初期化 ===== */
 function init(){
