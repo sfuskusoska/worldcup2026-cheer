@@ -80,6 +80,9 @@ push後、GitHub Pagesのビルド完了は `gh api repos/sfuskusoska/worldcup20
 
 ## 直近のコミット履歴（新しい順）
 ```
+bc6e2aa Add ESPN lineup auto-reflect + bench, single-select magnet name editor
+a6ac46d Move tactics board to bottom; halve magnet size; harden drag capture
+10d1082 Add PROJECT_HANDOFF.md for quick context loading in a new session
 f6330e8 Add tactics board; fake-news disclaimer on tribute
 09a059d Add Ibrahimovic tribute to Japan at the top of the page
 e4b1b65 Drop stale broken state via storage version bump (#a->#p, key bump)
