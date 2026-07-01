@@ -147,8 +147,11 @@
     .bench-col { flex:1 1 240px; }
     .bench-col h4 { margin:0 0 6px; font-size:12px; color:var(--muted); }
     .bench-chips { display:flex; flex-wrap:wrap; gap:6px; }
-    .bench-chip { font-size:11px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
+    .bench-chip { font-size:11px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); cursor:grab; touch-action:none; user-select:none; }
     .bench-chip b { margin-right:4px; opacity:.7; }
+    .bench-chip.dragging { opacity:.35; }
+    .magnet.drop-target { box-shadow:0 0 0 3px #5cf0c0, 0 4px 10px rgba(0,0,0,.45); }
+    .bench-drag-ghost { position:fixed; z-index:50; pointer-events:none; padding:4px 8px; border-radius:999px; background:rgba(0,0,0,.85); color:#fff; font-size:11px; font-weight:800; border:1px solid rgba(255,255,255,.4); transform:translate(-50%,-50%); white-space:nowrap; }
     .tactics-save-list { display:grid; gap:8px; margin-top:12px; }
     .tactics-save-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border-radius:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); font-size:12px; }
     .tactics-save-row button { padding:6px 9px; font-size:11px; }
@@ -1507,7 +1510,7 @@ const FORMATIONS = {
     {n:9,x:27,y:32},{n:10,x:41,y:32}
   ]
 };
-const TACTICS_STATE = { formationA: '4-3-3', formationB: '4-3-3', names: {}, positions: {}, selected: null };
+const TACTICS_STATE = { formationA: '4-3-3', formationB: '4-3-3', names: {}, starterJersey: {}, benches: { a: [], b: [] }, positions: {}, selected: null };
 function mirrorForTeamB(pos){ return { n: pos.n, x: 68 - pos.x, y: 105 - pos.y }; }
 function tacticsMagnetId(team, num){ return team + '-' + num; }
 function autoLayoutFromFormation(formationStr){
@@ -1539,6 +1542,10 @@ function buildTacticsDefaults(){
 }
 function loadTacticsNames(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsNames') || '{}'); } catch { return {}; } }
 function saveTacticsNames(){ try { localStorage.setItem('wc2026TacticsNames', JSON.stringify(TACTICS_STATE.names)); } catch {} }
+function loadTacticsJersey(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsJersey') || '{}'); } catch { return {}; } }
+function saveTacticsJersey(){ try { localStorage.setItem('wc2026TacticsJersey', JSON.stringify(TACTICS_STATE.starterJersey)); } catch {} }
+function loadTacticsBenches(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsBenches') || '{}') || { a:[], b:[] }; } catch { return { a:[], b:[] }; } }
+function saveTacticsBenches(){ try { localStorage.setItem('wc2026TacticsBenches', JSON.stringify(TACTICS_STATE.benches)); } catch {} }
 function loadTacticsSnapshots(){ try { return JSON.parse(localStorage.getItem('wc2026TacticsSnapshots') || '[]'); } catch { return []; } }
 function saveTacticsSnapshots(list){ try { localStorage.setItem('wc2026TacticsSnapshots', JSON.stringify(list)); } catch {} }
 function initTactics(){
@@ -1547,6 +1554,8 @@ function initTactics(){
   sel.innerHTML = Object.keys(FORMATIONS).map(k => `<option value="${k}">${k}</option>`).join('');
   sel.value = TACTICS_STATE.formationA;
   TACTICS_STATE.names = loadTacticsNames();
+  TACTICS_STATE.starterJersey = loadTacticsJersey();
+  TACTICS_STATE.benches = loadTacticsBenches();
   TACTICS_STATE.positions = buildTacticsDefaults();
   initLineupMatchSelect();
   sel.addEventListener('change', () => {
@@ -1556,6 +1565,7 @@ function initTactics(){
     renderTactics();
   });
   renderTactics();
+  renderTacticsBench();
 }
 function resetTactics(){
   TACTICS_STATE.positions = buildTacticsDefaults();
@@ -1623,6 +1633,7 @@ async function reflectLineup(matchId){
         const label = p.athlete?.shortName || p.athlete?.displayName || '';
         if(p.starter && place>=1 && place<=11){
           TACTICS_STATE.names[tacticsMagnetId(side, place)] = label;
+          TACTICS_STATE.starterJersey[tacticsMagnetId(side, place)] = p.jersey || '';
         } else {
           benches[side].push({ jersey:p.jersey, name:label });
         }
@@ -1633,6 +1644,7 @@ async function reflectLineup(matchId){
       }
     });
     saveTacticsNames();
+    saveTacticsJersey();
     const formSel = document.getElementById('formationSelect');
     if(formSel && FORMATIONS[TACTICS_STATE.formationA]) formSel.value = TACTICS_STATE.formationA;
     const note = document.getElementById('formationAutoNote');
@@ -1690,13 +1702,86 @@ function showGoalMarker(){
     <span class="gm-dot"></span><span class="gm-label">⚽ ${htmlEscape(scorer)}（${g.clock?.displayValue||''}）</span>
   </div>`;
 }
+function swapWithBench(team, num, benchIndex){
+  const id = tacticsMagnetId(team, num);
+  const bench = TACTICS_STATE.benches[team] || (TACTICS_STATE.benches[team] = []);
+  const incoming = bench[benchIndex];
+  if(!incoming) return;
+  const outgoingName = (TACTICS_STATE.names[id] || '').trim();
+  const outgoingJersey = TACTICS_STATE.starterJersey[id] || '';
+  TACTICS_STATE.names[id] = incoming.name;
+  TACTICS_STATE.starterJersey[id] = incoming.jersey || '';
+  if(outgoingName){
+    bench[benchIndex] = { jersey: outgoingJersey, name: outgoingName };
+  } else {
+    bench.splice(benchIndex, 1);
+  }
+  saveTacticsNames();
+  saveTacticsJersey();
+  saveTacticsBenches();
+  renderTactics();
+  renderTacticsBench();
+  toast(`${incoming.name} を${team === 'a' ? 'チームA' : 'チームB'}のスタメンに入れました。`);
+}
+function attachBenchChipDrag(el, team, index){
+  el.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    const ghost = document.createElement('div');
+    ghost.className = 'bench-drag-ghost';
+    ghost.textContent = el.textContent;
+    document.body.appendChild(ghost);
+    const moveGhost = (x, y) => { ghost.style.left = x + 'px'; ghost.style.top = y + 'px'; };
+    moveGhost(ev.clientX, ev.clientY);
+    el.classList.add('dragging');
+    try { el.setPointerCapture(ev.pointerId); } catch {}
+    let lastTarget = null;
+    const move = e => {
+      moveGhost(e.clientX, e.clientY);
+      const elAt = document.elementFromPoint(e.clientX, e.clientY);
+      const magnetEl = elAt ? elAt.closest('.magnet') : null;
+      if(lastTarget && lastTarget !== magnetEl) lastTarget.classList.remove('drop-target');
+      if(magnetEl && magnetEl.dataset.id.split('-')[0] === team){
+        magnetEl.classList.add('drop-target');
+        lastTarget = magnetEl;
+      } else {
+        lastTarget = null;
+      }
+    };
+    const up = e => {
+      document.body.removeChild(ghost);
+      el.classList.remove('dragging');
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      if(lastTarget) lastTarget.classList.remove('drop-target');
+      if(e.type === 'pointerup'){
+        const elAt = document.elementFromPoint(e.clientX, e.clientY);
+        const magnetEl = elAt ? elAt.closest('.magnet') : null;
+        if(magnetEl){
+          const [t, n] = magnetEl.dataset.id.split('-');
+          if(t === team) swapWithBench(t, Number(n), index);
+          else toast('違うチームの枠には入れられません。');
+        }
+      }
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  });
+}
 function renderTacticsBench(benches){
+  if(benches !== undefined) TACTICS_STATE.benches = benches;
+  saveTacticsBenches();
   const el = document.getElementById('tacticsBench');
   if(!el) return;
-  const col = (side,label) => `<div class="bench-col"><h4>${label}控え</h4><div class="bench-chips">
-    ${(benches[side]||[]).map(p=>`<span class="bench-chip"><b>${p.jersey||''}</b> ${htmlEscape(p.name)}</span>`).join('')}
+  const b = TACTICS_STATE.benches || { a:[], b:[] };
+  const col = (side,label) => `<div class="bench-col"><h4>${label}控え（ドラッグでスタメンと交代）</h4><div class="bench-chips">
+    ${(b[side]||[]).map((p,i)=>`<span class="bench-chip" data-side="${side}" data-index="${i}"><b>${p.jersey||''}</b> ${htmlEscape(p.name)}</span>`).join('')}
   </div></div>`;
   el.innerHTML = col('a','チームA') + col('b','チームB');
+  el.querySelectorAll('.bench-chip').forEach(chip => {
+    attachBenchChipDrag(chip, chip.dataset.side, Number(chip.dataset.index));
+  });
 }
 function magnetLabel(team, num){
   const nm = TACTICS_STATE.names[tacticsMagnetId(team, num)];
