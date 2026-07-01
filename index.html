@@ -383,6 +383,32 @@
     .tribute-body blockquote:last-child { margin-bottom:0; }
     .tribute-by { margin-top:8px; font-size:12px; color:var(--muted); font-weight:800; text-align:right; }
     .tribute-warning { margin:10px 0 0; padding:8px 11px; border-radius:10px; background:rgba(255,111,142,.12); border:1px solid rgba(255,111,142,.30); color:#ffc7d3; font-size:12px; font-weight:800; line-height:1.6; }
+    /* ===== 🧪 ベータ版（body.beta-mode 配下のみ有効。通常版には一切影響させない） ===== */
+    #betaBtn.beta-on { background: linear-gradient(135deg, #b388ff, #4aa3ff); color:#071022; border:0; box-shadow: 0 8px 22px rgba(120,120,255,.35); }
+    .confetti-canvas { position:fixed; inset:0; pointer-events:none; z-index:200; }
+    .beta-pill { border-color: rgba(179,136,255,.45) !important; background: rgba(179,136,255,.14) !important; color:#e3d5ff !important; font-variant-numeric: tabular-nums; }
+    body.beta-mode::before {
+      content:""; position:fixed; inset:-20%; z-index:-1; pointer-events:none;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(20,212,165,.16), transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(74,163,255,.16), transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(179,136,255,.14), transparent 45%);
+    }
+    body.beta-mode .lb-row:first-child { position:relative; border-color: rgba(247,201,72,.55); background: linear-gradient(90deg, rgba(247,201,72,.16), rgba(255,255,255,.05)); box-shadow: 0 0 20px rgba(247,201,72,.18); }
+    body.beta-mode .lb-row:first-child::after { content:'👑'; position:absolute; top:-11px; left:-7px; font-size:17px; transform:rotate(-18deg); }
+    body.beta-mode .pitch-wrap { box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 0 60px rgba(20,212,165,.28), inset 0 0 90px rgba(0,0,0,.35); }
+    @media (prefers-reduced-motion: no-preference) {
+      body.beta-mode::before { animation: betaAurora 16s ease-in-out infinite alternate; }
+      @keyframes betaAurora { from { transform: translate(0,0) scale(1); } to { transform: translate(4%, -3%) scale(1.08); } }
+      body.beta-mode .panel, body.beta-mode .user-card, body.beta-mode .source-card { transition: transform .25s ease, box-shadow .25s ease; }
+      body.beta-mode .user-card:hover, body.beta-mode .panel:hover { transform: translateY(-4px); box-shadow: 0 22px 55px rgba(0,0,0,.35); }
+      body.beta-mode .lb-row { animation: betaLbIn .5s ease backwards; }
+      body.beta-mode .lb-row:nth-child(2){ animation-delay:.07s } body.beta-mode .lb-row:nth-child(3){ animation-delay:.14s }
+      body.beta-mode .lb-row:nth-child(4){ animation-delay:.21s } body.beta-mode .lb-row:nth-child(5){ animation-delay:.28s }
+      @keyframes betaLbIn { from { opacity:0; transform: translateX(-16px); } }
+      body.beta-mode .btn { transition: transform .15s ease; }
+      body.beta-mode .btn:active { transform: scale(.94); }
+    }
   </style>
 </head>
 <body>
@@ -401,6 +427,7 @@
         <button class="btn" id="refreshBtn">🔄 最新結果で更新</button>
         <button class="btn secondary" id="fitBtn">全体表示</button>
         <button class="btn warn" id="copyShareBtn">ページ共有</button>
+        <button class="btn secondary" id="betaBtn" onclick="toggleBeta()" title="演出を強化したベータ版に切り替え">🧪 ベータ版</button>
       </div>
     </div>
   </div>
@@ -972,6 +999,7 @@ function stopRoulette(){
     document.getElementById('rouletteResult').innerHTML = `<img src="${teamObj.flag}" alt="" onerror="this.style.visibility='hidden'">${teamObj.ja}`;
     document.getElementById('rouletteHint').textContent = `${teamObj.ja} が出ました。配分には反映していません。`;
     document.getElementById('rouletteActions').innerHTML = `<button class="btn" onclick="openRoulette()">もう一回</button><button class="btn secondary" onclick="closeRoulette()">閉じる</button>`;
+    if(typeof fireConfetti === 'function') fireConfetti(110);
   };
   settle();
 }
@@ -1743,6 +1771,7 @@ function showGoalMarker(){
   layer.innerHTML = `<div class="goal-marker" style="left:${(pos.x/68*100).toFixed(2)}%; top:${(pos.y/105*100).toFixed(2)}%">
     <span class="gm-dot"></span><span class="gm-label">⚽ ${htmlEscape(scorer)}（${g.clock?.displayValue||''}）</span>
   </div>`;
+  if(typeof fireConfetti === 'function') fireConfetti(60);
 }
 function swapWithBench(team, num, benchIndex){
   const id = tacticsMagnetId(team, num);
@@ -2154,10 +2183,93 @@ async function exportFramesAsGif(){
   renderTactics();
 }
 
-Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker, toggleDrawMode, clearArrows, recordFrame, jumpToFrame, deleteLastFrame, playFrames, undoTactics, redoTactics, applySetPiece, exportTacticsPng, exportFramesAsGif });
+/* ===== 🧪 ベータ版（切替式。通常版の動作には影響しない演出強化） ===== */
+const BETA_KEY = 'wc2026Beta';
+let betaCountdownTimer = null;
+function isBeta(){ return document.body.classList.contains('beta-mode'); }
+function reducedMotion(){ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function fireConfetti(count = 140){
+  if(!isBeta() || reducedMotion()) return;
+  const canvas = document.createElement('canvas');
+  canvas.className = 'confetti-canvas';
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#ffd166','#4aa3ff','#14d4a5','#ff6f8e','#b388ff','#ffffff'];
+  const parts = Array.from({length: count}, () => ({
+    x: Math.random()*canvas.width, y: -20 - Math.random()*canvas.height*0.25,
+    vx: (Math.random()-0.5)*2.6, vy: 2.2+Math.random()*3.6,
+    s: 4+Math.random()*6, r: Math.random()*Math.PI*2, vr: (Math.random()-0.5)*0.3,
+    c: colors[Math.floor(Math.random()*colors.length)]
+  }));
+  const t0 = Date.now();
+  (function frame(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6);
+      ctx.restore();
+    });
+    if(Date.now()-t0 < 2600 && document.body.contains(canvas)) requestAnimationFrame(frame);
+    else canvas.remove();
+  })();
+}
+function nextUpcomingMatch(){
+  const now = Date.now();
+  return Object.values(MATCHES)
+    .filter(m => !m.winner && new Date(m.utc).getTime() > now)
+    .sort((a,b) => new Date(a.utc) - new Date(b.utc))[0] || null;
+}
+function startBetaCountdown(){
+  stopBetaCountdown();
+  const strip = document.querySelector('.status-strip');
+  if(!strip) return;
+  const pill = document.createElement('span');
+  pill.id = 'betaCountdown';
+  pill.className = 'pill beta-pill';
+  strip.appendChild(pill);
+  const tick = () => {
+    const m = nextUpcomingMatch();
+    if(!m){ pill.textContent = '⏱ 予定された次戦はありません'; return; }
+    const diff = new Date(m.utc).getTime() - Date.now();
+    if(diff <= 0){ pill.textContent = `🔴 M${m.num} キックオフ！`; return; }
+    const h = Math.floor(diff/3600000), mn = Math.floor(diff%3600000/60000), s = Math.floor(diff%60000/1000);
+    pill.textContent = `⏱ 次戦 M${m.num} まで ${h}:${String(mn).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  };
+  tick();
+  betaCountdownTimer = setInterval(tick, 1000);
+}
+function stopBetaCountdown(){
+  clearInterval(betaCountdownTimer);
+  betaCountdownTimer = null;
+  document.getElementById('betaCountdown')?.remove();
+}
+function applyBeta(on, silent){
+  document.body.classList.toggle('beta-mode', on);
+  const btn = document.getElementById('betaBtn');
+  if(btn){ btn.textContent = on ? '🧪 ベータ版 ON' : '🧪 ベータ版'; btn.classList.toggle('beta-on', on); }
+  try { localStorage.setItem(BETA_KEY, on ? '1' : '0'); } catch {}
+  if(on){
+    startBetaCountdown();
+    if(!silent){ fireConfetti(160); toast('🧪 ベータ版に切り替えました。演出が強化されます。'); }
+  } else {
+    stopBetaCountdown();
+    if(!silent) toast('通常版に戻しました。');
+  }
+}
+function toggleBeta(){ applyBeta(!isBeta()); }
+function initBeta(){
+  let on = false;
+  try { on = localStorage.getItem(BETA_KEY) === '1'; } catch {}
+  applyBeta(on, true);
+}
+
+Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker, toggleDrawMode, clearArrows, recordFrame, jumpToFrame, deleteLastFrame, playFrames, undoTactics, redoTactics, applySetPiece, exportTacticsPng, exportFramesAsGif, toggleBeta });
 
 /* ===== 初期化 ===== */
 function init(){
+  initBeta();
   initTactics();
   renderTacticsSaveList();
 
