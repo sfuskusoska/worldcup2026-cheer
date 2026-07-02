@@ -1215,20 +1215,56 @@ function drawConnectors(){
   ctx.lineWidth = 2;
   const cardW = parseFloat(getComputedStyle(stage).getPropertyValue('--cardW')) || (document.body.classList.contains('detail-mode') ? 292 : 224);
   const cardH = parseFloat(getComputedStyle(stage).getPropertyValue('--cardH')) || (document.body.classList.contains('detail-mode') ? 94 : 74);
+  const connectorPath = (parentId, childId) => {
+    const a = POS[parentId], b = POS[childId];
+    const x1 = a.x + cardW, y1 = a.y + cardH / 2;
+    const x2 = b.x, y2 = b.y + cardH / 2;
+    const mid = x1 + (x2 - x1) / 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1); ctx.lineTo(mid, y1); ctx.lineTo(mid, y2); ctx.lineTo(x2, y2);
+  };
   Object.entries(MATCHES).forEach(([childId, child]) => {
     if(child.round === 'r32') return;
     child.slots.forEach(slot => {
       const parentId = slot.winnerOf || slot.loserOf;
       if(!parentId || !POS[parentId] || !POS[childId]) return;
-      const a = POS[parentId], b = POS[childId];
-      const x1 = a.x + cardW, y1 = a.y + cardH / 2;
-      const x2 = b.x, y2 = b.y + cardH / 2;
-      const mid = x1 + (x2 - x1) / 2;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1); ctx.lineTo(mid, y1); ctx.lineTo(mid, y2); ctx.lineTo(x2, y2);
+      connectorPath(parentId, childId);
       ctx.stroke();
     });
   });
+  /* 勝ち上がりの軌跡：勝者が確定した区間を持ち主カラーのグローでなぞる */
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  winnerConnectorSegments().forEach(seg => {
+    ctx.save();
+    ctx.shadowColor = seg.color;
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = seg.color;
+    ctx.lineWidth = 3.5;
+    connectorPath(seg.parentId, seg.childId);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.lineWidth = 1.2;
+    connectorPath(seg.parentId, seg.childId);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+function winnerConnectorSegments(){
+  const segs = [];
+  Object.entries(MATCHES).forEach(([childId, child]) => {
+    if(child.round === 'r32') return;
+    child.slots.forEach(slot => {
+      const parentId = slot.winnerOf;
+      if(!parentId || !POS[parentId] || !POS[childId]) return;
+      const winner = MATCHES[parentId]?.winner;
+      if(!winner) return;
+      const owner = ownerOf(winner);
+      segs.push({ parentId, childId, team: winner, color: owner ? owner.color : '#14d4a5' });
+    });
+  });
+  return segs;
 }
 function renderChampion(){
   const box = document.getElementById('championBox');
