@@ -276,14 +276,63 @@
     .team-row.winner { background: rgba(20,212,165,.18); color: #f7fffc; font-weight: 900; }
     .team-row.loser { opacity: .52; }
     .team-row.tbd { color: #b9c4d2; cursor: default; }
-    .team-row.owned { background: rgba(255,209,102,.16); }
+    /* 応援チーム = 持ち主カラーの左バー（縮小しても視認できる）＋名前チップ */
+    .team-row.owned { background: rgba(255,255,255,.05); box-shadow: inset 3px 0 0 var(--own,#ffd166); }
+    .team-row.winner.owned { background: rgba(20,212,165,.18); }
+    /* 「強調表示」で自分を選ぶと、自分の応援チームの行を自分の色で縁取り（スポットライト） */
+    .team-row.mine { outline: 2px solid var(--own,#ffd166); outline-offset: -2px; }
     .team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.2; display:flex; align-items:center; gap:3px; }
     .team-code { color:#9eabba; font-size: 9px; margin-left: 2px; }
-    .owner-dots { display:inline-flex; gap:2px; margin-left:2px; }
-    .owner-dots i { width:7px; height:7px; border-radius:50%; display:inline-block; box-shadow:0 0 0 1px rgba(0,0,0,.35); }
+    .owner-tag { display:inline-block; flex:0 0 auto; font-size:9px; font-weight:1000; line-height:1.5; padding:0 4px; border-radius:5px; color:#04121d; letter-spacing:.02em; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
+    /* 自分の応援チームを含むカードは、自分の色で発光（全体表示=縮小でも一目で分かる） */
+    .match-card.mine-owner { box-shadow: 0 0 0 3px var(--mecolor,#ffd166), 0 0 22px -2px var(--mecolor,#ffd166), 0 10px 26px rgba(0,0,0,.28); border-color: var(--mecolor,#ffd166); }
+    .match-card.mine-owner::before { background: var(--mecolor,#ffd166) !important; box-shadow:0 0 16px var(--mecolor,#ffd166); }
+    /* ===== My応援チームの試合 ===== */
+    .my-schedule { display:flex; flex-direction:column; gap:7px; }
+    .mysch-hint { color:var(--muted); font-size:13px; line-height:1.65; padding:6px 2px; }
+    .mysch-row { display:grid; grid-template-columns:30px minmax(0,1fr) auto; gap:10px; align-items:center; padding:8px 11px; border-radius:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-left:3px solid var(--own,#ffd166); }
+    .mysch-row.out { opacity:.55; }
+    .mysch-flag { width:30px; height:20px; object-fit:cover; border-radius:3px; box-shadow:0 0 0 1px rgba(0,0,0,.3); }
+    .mysch-team { font-weight:900; font-size:13px; color:#eaf4ff; }
+    .mysch-sub { font-size:11px; color:var(--muted); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mysch-cd { font-variant-numeric:tabular-nums; font-weight:900; font-size:12px; padding:5px 9px; border-radius:999px; background:rgba(74,163,255,.16); color:#bfe0ff; white-space:nowrap; text-align:center; }
+    .mysch-cd.live { background:rgba(255,111,142,.2); color:#ffb3c4; }
+    .mysch-cd.done { background:rgba(255,255,255,.07); color:var(--muted); }
+    /* ===== 応援チーム別 得点/失点 ===== */
+    .cheer-goals { display:flex; flex-direction:column; gap:11px; }
+    .cg-row { display:grid; grid-template-columns:30px minmax(0,1fr); gap:11px; align-items:center; }
+    .cg-badge { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-weight:1000; font-size:14px; color:#04121d; }
+    .cg-main { min-width:0; }
+    .cg-name { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:12px; margin-bottom:4px; }
+    .cg-name>span:first-child { font-weight:900; color:#e9f4ff; }
+    .cg-nums { color:var(--muted); font-size:11px; white-space:nowrap; }
+    .cg-nums b { color:#8ff0d3; font-size:13px; } .cg-nums i { color:#ffb3c4; font-style:normal; font-weight:900; } .cg-nums u { text-decoration:none; color:#ffe29a; font-weight:900; }
+    .cg-bar { height:7px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; }
+    .cg-bar span { display:block; height:100%; border-radius:999px; }
+    /* ===== 個人タイトル争い ===== */
+    .leaders-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .leaders-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    @media (max-width:720px){ .leaders-grid { grid-template-columns:1fr; gap:22px; } }
+    .leaders-col-title { font-weight:900; font-size:13px; color:#dbe7f4; margin-bottom:9px; padding-bottom:7px; border-bottom:1px solid rgba(255,255,255,.1); }
+    .leaders-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
+    .leaders-list li.leaders-empty { padding:8px 2px; }
+    .ldr { display:grid; grid-template-columns:22px 24px minmax(0,1fr) auto; gap:9px; align-items:center; padding:6px 9px; border-radius:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); }
+    .ldr.owned { border-color:rgba(74,163,255,.5); background:rgba(74,163,255,.09); }
+    .ldr.mine { outline:2px solid var(--own,#ffd166); outline-offset:-2px; }
+    .ldr-rank { font-weight:1000; color:#9eabba; font-size:13px; text-align:center; }
+    .ldr-rank.top { color:#ffd166; }
+    .ldr-flag { width:24px; height:16px; object-fit:cover; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,.3); }
+    .ldr-name { min-width:0; }
+    .ldr-player { font-weight:900; font-size:12px; color:#eef5ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ldr-team { font-size:10px; color:var(--muted); display:flex; align-items:center; gap:5px; margin-top:1px; }
+    .ldr-own { font-size:9px; font-weight:1000; padding:0 4px; border-radius:5px; color:#04121d; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+    .ldr-val { font-weight:1000; font-size:16px; color:#fff; white-space:nowrap; }
+    .ldr-val small { font-size:10px; color:var(--muted); font-weight:700; margin-left:2px; }
     .score { justify-self: end; min-width: 22px; text-align:center; border-radius: 7px; padding: 1px 4px; background: rgba(255,255,255,.10); font-weight: 900; font-size: 11px; line-height: 1.25; }
     .flag-mini { width: 19px; height: 13px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); background: rgba(255,255,255,.08); }
     .grid-2 { display:grid; grid-template-columns: minmax(0,1.35fr) minmax(300px,.65fr); gap:16px; }
+    /* グリッド項目を縮小可能に（オッズ表などの広い中身は table-wrap 内で横スクロール。モバイルで右端がクリップされるのを防ぐ） */
+    .grid-2 > .panel { min-width: 0; }
     .grid-3 { display:grid; grid-template-columns: minmax(0,1.25fr) minmax(300px,.75fr); gap:16px; }
     .table-wrap { overflow:auto; border-radius: 16px; border: 1px solid rgba(255,255,255,.10); }
     table { width: 100%; border-collapse: collapse; min-width: 680px; }
@@ -427,7 +476,6 @@
         <button class="btn" id="refreshBtn">🔄 最新結果で更新</button>
         <button class="btn secondary" id="fitBtn">全体表示</button>
         <button class="btn warn" id="copyShareBtn">ページ共有</button>
-        <button class="btn secondary" id="betaBtn" onclick="toggleBeta()" title="演出を強化したベータ版に切り替え">🧪 ベータ版</button>
       </div>
     </div>
   </div>
@@ -530,6 +578,40 @@
         <h3>現在の優勝国 / 決勝の勝者</h3>
         <div class="champion-team" id="championBox"><span>未定</span></div>
         <p class="note">決勝が終了すると、更新ボタンで優勝国がここに表示されます。</p>
+      </div>
+    </section>
+
+    <section class="section grid-2">
+      <div class="panel">
+        <div class="section-title"><h2>My応援チームの試合</h2><span class="note" id="myScheduleWho">上部「強調表示」で自分を選択</span></div>
+        <div class="my-schedule" id="myTeamSchedule"></div>
+      </div>
+      <div class="panel">
+        <div class="section-title"><h2>応援チーム別 得点 / 失点</h2><span class="note">配分6チームの累計（決着した試合）</span></div>
+        <div class="cheer-goals" id="cheerGoalsSummary"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="panel">
+        <div class="section-title" style="margin-bottom:6px">
+          <h2>個人タイトル争い</h2>
+          <span class="note">得点王・アシスト王（ESPN公開データ）。青枠＝誰かの応援チームの選手／「強調表示」の自分は色枠。</span>
+        </div>
+        <div class="leaders-bar">
+          <button class="btn" id="loadLeadersBtn" onclick="loadLeaders()">⚽ 得点王・アシスト王を読み込む</button>
+          <span class="note" id="leadersStatus"></span>
+        </div>
+        <div class="leaders-grid">
+          <div class="leaders-col">
+            <div class="leaders-col-title">⚽ 得点王ランキング</div>
+            <ol class="leaders-list" id="goalsLeadersList"><li class="note leaders-empty">「読み込む」を押すと表示されます。</li></ol>
+          </div>
+          <div class="leaders-col">
+            <div class="leaders-col-title">🅰️ アシスト王ランキング</div>
+            <ol class="leaders-list" id="assistLeadersList"><li class="note leaders-empty">「読み込む」を押すと表示されます。</li></ol>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -848,6 +930,9 @@ function setMe(v){
   me = v || '';
   try { localStorage.setItem('wc2026Me', me); } catch {}
   renderPool();
+  renderBracket();
+  if(typeof renderMyTeamSchedule === 'function') renderMyTeamSchedule();
+  if(typeof renderLeadersOwners === 'function') renderLeadersOwners();
 }
 
 /* ===== 配分の編集・保存・共有（ホストが自分で選べます） ===== */
@@ -1171,13 +1256,16 @@ function renderBracket(){
   buildPositions();
   const cards = document.getElementById('bracketCards');
   const allIds = ROUND_LAYOUT.flatMap(r => r.ids);
+  const meUser = me ? userById(me) : null;
   cards.innerHTML = allIds.map(id => {
     const m = MATCHES[id];
     const pos = POS[id];
     const hasOwner = m.slots.some(s => { const tid = getSlotTeam(s); return tid && ownersOf(tid).length; });
+    const mineCard = !!(meUser && m.slots.some(s => { const tid = getSlotTeam(s); return tid && ownersOf(tid).some(o => o.id === me); }));
     const rows = m.slots.map(slot => teamRow(getSlotTeam(slot), slot, m)).join('');
     const tone = matchTone(m);
-    return `<article class="match-card ${tone} ${hasOwner ? 'has-owner' : ''}" id="card-${id}" style="left:${pos.x}px;top:${pos.y}px" title="M${m.num} / ${m.venue} / ${fmtJst(m.utc)}">
+    const style = `left:${pos.x}px;top:${pos.y}px` + (mineCard ? `;--mecolor:${meUser.color}` : '');
+    return `<article class="match-card ${tone} ${hasOwner ? 'has-owner' : ''} ${mineCard ? 'mine-owner' : ''}" id="card-${id}" style="${style}" title="M${m.num} / ${m.venue} / ${fmtJst(m.utc)}">
       <div class="match-meta"><b>M${m.num}</b><span>${m.venue}</span><span class="tag">${matchLabel(m)}</span></div>
       <div class="teams">${rows}</div>
     </article>`;
@@ -1192,11 +1280,14 @@ function teamRow(teamId, slot, match){
   const isLoser = teamId && match.winner && match.winner !== teamId;
   const owners = ownersOf(teamId);
   const isOwned = owners.length > 0;
-  const cls = ['team-row', isWinner ? 'winner' : '', isLoser ? 'loser' : '', isTbd ? 'tbd' : '', isOwned ? 'owned' : ''].join(' ');
+  const own = owners[0] || null;
+  const mine = !!(me && owners.some(o => o.id === me));
+  const cls = ['team-row', isWinner ? 'winner' : '', isLoser ? 'loser' : '', isTbd ? 'tbd' : '', isOwned ? 'owned' : '', mine ? 'mine' : ''].join(' ');
+  const styleAttr = own ? ` style="--own:${own.color}"` : '';
   const flag = t ? `<img class="flag-mini" src="${t.flag}" alt="${t.ja} 国旗" onerror="this.style.visibility='hidden'">` : `<span></span>`;
-  const dots = isOwned ? `<span class="owner-dots">${owners.map(o => `<i style="background:${o.color}" title="${o.name}"></i>`).join('')}</span>` : '';
-  const name = t ? `${t.ja}${dots}<span class="team-code">${t.abbr}</span>` : getPlaceholder(slot);
-  return `<div class="${cls}"><span class="flag-wrap">${flag}</span><span class="team-name">${name}</span><span class="score">${score === '' ? '—' : score}</span></div>`;
+  const tag = isOwned ? `<span class="owner-tag" style="background:${own.color}" title="${owners.map(o => o.name).join('・')}の応援チーム">${owners.map(o => o.name).join('')}</span>` : '';
+  const name = t ? `${t.ja}${tag}<span class="team-code">${t.abbr}</span>` : getPlaceholder(slot);
+  return `<div class="${cls}"${styleAttr}><span class="flag-wrap">${flag}</span><span class="team-name">${name}</span><span class="score">${score === '' ? '—' : score}</span></div>`;
 }
 function drawConnectors(){
   const canvas = document.getElementById('connectorCanvas');
@@ -1284,6 +1375,197 @@ function renderMiniSchedule(){
     return `<div class="mini-match ${matchTone(m)} ${owned ? 'owned' : ''}"><span>M${m.num} ${teams}${score}</span><b>${fmtJst(m.utc)}</b></div>`;
   }).join('');
 }
+/* ===== My応援チームの試合スケジュール ===== */
+function upcomingMatchIdForTeam(teamId){
+  const ids = Object.keys(MATCHES).filter(id => {
+    const m = MATCHES[id];
+    if(m.round === '3rd') return false;
+    if(m.winner) return false;
+    return getParticipants(id).includes(teamId);
+  });
+  ids.sort((a,b) => new Date(MATCHES[a].utc) - new Date(MATCHES[b].utc));
+  return ids[0] || null;
+}
+function tickCountdowns(){
+  const now = Date.now();
+  document.querySelectorAll('.cd-timer').forEach(el => {
+    const diff = new Date(el.getAttribute('data-utc')).getTime() - now;
+    if(diff <= 0){ el.textContent = '結果待ち'; return; }
+    const d = Math.floor(diff/86400000), h = Math.floor(diff%86400000/3600000), mn = Math.floor(diff%3600000/60000), s = Math.floor(diff%60000/1000);
+    el.textContent = (d > 0 ? `${d}日 ` : '') + `${h}:${String(mn).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  });
+}
+function renderMyTeamSchedule(){
+  const box = document.getElementById('myTeamSchedule');
+  const who = document.getElementById('myScheduleWho');
+  if(!box) return;
+  const u = me ? userById(me) : null;
+  if(!u){
+    if(who) who.textContent = '上部「強調表示」で自分を選択';
+    box.innerHTML = `<div class="mysch-hint">上部の「強調表示」で自分（岡・大・田・片・南）を選ぶと、あなたの応援6チームの<b>次の試合</b>とキックオフまでの<b>カウントダウン</b>がここに並びます。</div>`;
+    return;
+  }
+  if(who) who.innerHTML = `<span style="color:${u.color};font-weight:900">${u.name}</span> の応援6チーム`;
+  const teams = getUserTeams(u.id);
+  if(!teams.length){ box.innerHTML = `<div class="mysch-hint">${u.name}さんはまだ配分がありません。</div>`; return; }
+  const rows = teams.map(tid => {
+    const nid = upcomingMatchIdForTeam(tid);
+    return { tid, nid, m: nid ? MATCHES[nid] : null, prog: teamProgress(tid) };
+  }).sort((a,b) => (a.m ? new Date(a.m.utc).getTime() : Infinity) - (b.m ? new Date(b.m.utc).getTime() : Infinity));
+  box.innerHTML = rows.map(r => {
+    const t = TEAMS[r.tid];
+    const winTag = winCount(r.tid) ? ` <span class="team-code">${winCount(r.tid)}勝</span>` : '';
+    if(r.m){
+      const parts = getParticipants(r.nid);
+      const oppId = parts.find(p => p && p !== r.tid);
+      const oppSlot = r.m.slots.find(s => getSlotTeam(s) !== r.tid);
+      const opp = oppId ? TEAMS[oppId].ja : (oppSlot ? getPlaceholder(oppSlot) : '相手未定');
+      const live = matchTone(r.m) === 'live';
+      const cd = live ? '🔴 ライブ' : `<span class="cd-timer" data-utc="${r.m.utc}">—</span>`;
+      return `<div class="mysch-row" style="--own:${u.color}">
+        <img class="mysch-flag" src="${t.flag}" alt="" onerror="this.style.visibility='hidden'">
+        <div style="min-width:0"><div class="mysch-team">${t.ja}${winTag}</div>
+          <div class="mysch-sub">${r.m.label}・vs ${opp}・${fmtJst(r.m.utc)}</div></div>
+        <div class="mysch-cd ${live ? 'live' : ''}">${cd}</div>
+      </div>`;
+    }
+    const champ = r.prog.state === 'champ';
+    const out = r.prog.state === 'out';
+    const label = champ ? '🏆 優勝' : (out ? '❌ 敗退' : '⏳ 次戦待ち');
+    const sub = champ ? '大会制覇' : (out ? r.prog.text : '次の対戦相手が決まると表示されます');
+    return `<div class="mysch-row ${out ? 'out' : ''}" style="--own:${u.color}">
+      <img class="mysch-flag" src="${t.flag}" alt="" onerror="this.style.visibility='hidden'">
+      <div style="min-width:0"><div class="mysch-team">${t.ja}${winTag}</div><div class="mysch-sub">${sub}</div></div>
+      <div class="mysch-cd done">${label}</div>
+    </div>`;
+  }).join('');
+  tickCountdowns();
+}
+
+/* ===== 応援チーム別 得点/失点サマリー ===== */
+function teamGoalStats(teamId){
+  let gf = 0, ga = 0;
+  Object.keys(MATCHES).forEach(id => {
+    const m = MATCHES[id];
+    if(!m.score) return;
+    const parts = getParticipants(id);
+    if(!parts.includes(teamId)) return;
+    const opp = parts.find(p => p && p !== teamId);
+    if(m.score[teamId] !== undefined) gf += Number(m.score[teamId]) || 0;
+    if(opp && m.score[opp] !== undefined) ga += Number(m.score[opp]) || 0;
+  });
+  return { gf, ga };
+}
+function renderCheerGoalsSummary(){
+  const box = document.getElementById('cheerGoalsSummary');
+  if(!box) return;
+  const rows = USERS.map(u => {
+    let gf = 0, ga = 0;
+    getUserTeams(u.id).forEach(tid => { const s = teamGoalStats(tid); gf += s.gf; ga += s.ga; });
+    return { u, gf, ga, diff: gf - ga };
+  }).sort((a,b) => b.gf - a.gf || b.diff - a.diff);
+  const maxG = Math.max(1, ...rows.map(r => Math.max(r.gf, r.ga)));
+  box.innerHTML = rows.map(r => {
+    const gfw = Math.round(r.gf / maxG * 100), gaw = Math.round(r.ga / maxG * 100);
+    const diffStr = (r.diff > 0 ? '+' : '') + r.diff;
+    return `<div class="cg-row">
+      <div class="cg-badge" style="background:${r.u.color}">${r.u.name}</div>
+      <div class="cg-main">
+        <div class="cg-name"><span>${r.u.name}</span><span class="cg-nums">⚽得点<b>${r.gf}</b>・失点<i>${r.ga}</i>・得失差<u>${diffStr}</u></span></div>
+        <div class="cg-bar" title="得点 ${r.gf}"><span style="width:${gfw}%;background:linear-gradient(90deg,#14d4a5,#7df0cf)"></span></div>
+        <div class="cg-bar" style="margin-top:3px" title="失点 ${r.ga}"><span style="width:${gaw}%;background:linear-gradient(90deg,#ff6f8e,#ffb3c4)"></span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== 個人タイトル争い（得点王・アシスト王：ESPN core leaders） ===== */
+const LEADERS_STATE = { goals: [], assists: [], loaded: false };
+const ATHLETE_CACHE = new Map();
+function espnTeamCodeFromFlag(href){
+  const m = String(href || '').match(/\/([a-z]{2,4})\.png(?:$|\?)/i);
+  return m ? (ALIASES[m[1].toUpperCase()] || null) : null;
+}
+async function resolveAthlete(ref){
+  const url = String(ref || '').replace(/^http:/, 'https:');
+  if(ATHLETE_CACHE.has(url)) return ATHLETE_CACHE.get(url);
+  let info = null;
+  try {
+    const a = await espnFetchJson(url);
+    if(a) info = { name: a.displayName || a.shortName || '選手', flag: (a.flag && a.flag.href) || '', code: espnTeamCodeFromFlag(a.flag && a.flag.href) };
+  } catch {}
+  ATHLETE_CACHE.set(url, info);
+  return info;
+}
+async function resolveMany(refs, conc){
+  let i = 0;
+  const worker = async () => { while(i < refs.length){ const idx = i++; await resolveAthlete(refs[idx]); } };
+  await Promise.all(Array.from({ length: Math.min(conc, refs.length) }, worker));
+}
+async function loadLeaders(){
+  const btn = document.getElementById('loadLeadersBtn');
+  const status = document.getElementById('leadersStatus');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '読み込み中…';
+  if(status) status.textContent = 'ESPNから取得しています…';
+  try {
+    const base = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/';
+    let data = null;
+    for(const ty of ['1','2','3']){
+      const d = await espnFetchJson(base + ty + '/leaders?lang=en&region=us').catch(() => null);
+      const g = d && d.categories && d.categories.find(c => c.name === 'goalsLeaders');
+      if(g && g.leaders && g.leaders.length){ data = d; break; }
+    }
+    if(!data) throw new Error('no leaders');
+    const goalsCat = data.categories.find(c => c.name === 'goalsLeaders');
+    const assistsCat = data.categories.find(c => c.name === 'assistsLeaders');
+    const LIMIT = 10;
+    const gEntries = ((goalsCat && goalsCat.leaders) || []).slice(0, LIMIT);
+    const aEntries = ((assistsCat && assistsCat.leaders) || []).slice(0, LIMIT);
+    const refs = [...new Set([...gEntries, ...aEntries].map(e => e.athlete && e.athlete.$ref).filter(Boolean).map(r => r.replace(/^http:/, 'https:')))];
+    await resolveMany(refs, 6);
+    const pick = e => ({ value: e.value, athlete: ATHLETE_CACHE.get(String(e.athlete.$ref).replace(/^http:/, 'https:')) });
+    LEADERS_STATE.goals = gEntries.map(pick);
+    LEADERS_STATE.assists = aEntries.map(pick);
+    LEADERS_STATE.loaded = true;
+    renderLeaders();
+    if(status) status.textContent = '最終更新: ' + new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', dateStyle: 'short', timeStyle: 'short' }).format(new Date());
+    btn.textContent = '🔄 再読み込み';
+  } catch(e){
+    if(status) status.textContent = '取得に失敗しました（ネットワーク/CORS制限の可能性）。少し時間をおいて再試行してください。';
+    btn.textContent = orig;
+  } finally {
+    btn.disabled = false;
+  }
+}
+function renderLeadersList(elId, list, unit){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  if(!list || !list.length){ el.innerHTML = `<li class="note leaders-empty">データがありませんでした。</li>`; return; }
+  el.innerHTML = list.map((r, i) => {
+    const a = r.athlete || {};
+    const code = a.code;
+    const owner = code ? ownerOf(code) : null;
+    const mine = !!(owner && owner.id === me);
+    const teamJa = code && TEAMS[code] ? TEAMS[code].ja : '';
+    const ownTag = owner ? `<span class="ldr-own" style="background:${owner.color}">${owner.name}</span>` : '';
+    const cls = ['ldr', owner ? 'owned' : '', mine ? 'mine' : ''].join(' ');
+    const styleAttr = owner ? ` style="--own:${owner.color}"` : '';
+    const flag = a.flag ? `<img class="ldr-flag" src="${a.flag}" alt="" onerror="this.style.visibility='hidden'">` : '<span></span>';
+    return `<li class="${cls}"${styleAttr}>
+      <span class="ldr-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
+      ${flag}
+      <span class="ldr-name"><span class="ldr-player">${a.name || '—'}</span><span class="ldr-team">${teamJa}${ownTag}</span></span>
+      <span class="ldr-val">${r.value}<small>${unit}</small></span>
+    </li>`;
+  }).join('');
+}
+function renderLeaders(){
+  renderLeadersList('goalsLeadersList', LEADERS_STATE.goals, '得点');
+  renderLeadersList('assistLeadersList', LEADERS_STATE.assists, 'アシスト');
+}
+function renderLeadersOwners(){ if(LEADERS_STATE.loaded) renderLeaders(); }
+
 function renderAll(){
   renderPool();
   renderLeaderboard();
@@ -1291,6 +1573,8 @@ function renderAll(){
   renderBracket();
   renderChampion();
   renderMiniSchedule();
+  renderMyTeamSchedule();
+  renderCheerGoalsSummary();
   applyViewMode(appState.viewMode || 'fit');
 }
 
@@ -2222,7 +2506,7 @@ async function exportFramesAsGif(){
 /* ===== 🧪 ベータ版（切替式。通常版の動作には影響しない演出強化） ===== */
 const BETA_KEY = 'wc2026Beta';
 let betaCountdownTimer = null;
-function isBeta(){ return document.body.classList.contains('beta-mode'); }
+function isBeta(){ return true; }   /* 旧ベータ演出は通常版に統合（常時ON） */
 function reducedMotion(){ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 function fireConfetti(count = 140){
   if(!isBeta() || reducedMotion()) return;
@@ -2296,12 +2580,12 @@ function applyBeta(on, silent){
 }
 function toggleBeta(){ applyBeta(!isBeta()); }
 function initBeta(){
-  let on = false;
-  try { on = localStorage.getItem(BETA_KEY) === '1'; } catch {}
-  applyBeta(on, true);
+  /* ベータ演出は通常版に統合。常時ONで初期化（トグルは廃止） */
+  document.body.classList.add('beta-mode');
+  startBetaCountdown();
 }
 
-Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker, toggleDrawMode, clearArrows, recordFrame, jumpToFrame, deleteLastFrame, playFrames, undoTactics, redoTactics, applySetPiece, exportTacticsPng, exportFramesAsGif, toggleBeta });
+Object.assign(window, { openRoulette, startRoulette, stopRoulette, closeRoulette, toggleBgm, resetTactics, saveTacticsSnapshot, loadTacticsSnapshot, deleteTacticsSnapshot, setTacticsName, reflectLineup, selectMagnet, showGoalMarker, toggleDrawMode, clearArrows, recordFrame, jumpToFrame, deleteLastFrame, playFrames, undoTactics, redoTactics, applySetPiece, exportTacticsPng, exportFramesAsGif, toggleBeta, loadLeaders });
 
 /* ===== 初期化 ===== */
 function init(){
@@ -2335,6 +2619,7 @@ function init(){
   document.getElementById('rouletteCloseBtn').addEventListener('click', closeRoulette);
   document.getElementById('rouletteOverlay').addEventListener('click', e => { if(e.target.id === 'rouletteOverlay') closeRoulette(); });
   window.addEventListener('resize', () => applyViewMode(appState.viewMode || 'fit'));
+  setInterval(tickCountdowns, 1000);
 }
 init();
 </script>
