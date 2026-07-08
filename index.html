@@ -335,6 +335,16 @@
     .grid-2 > .panel { min-width: 0; }
     .grid-3 { display:grid; grid-template-columns: minmax(0,1.25fr) minmax(300px,.75fr); gap:16px; }
     .table-wrap { overflow:auto; border-radius: 16px; border: 1px solid rgba(255,255,255,.10); }
+    .video-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:14px; }
+    .video-card { cursor:pointer; }
+    .video-thumb-wrap { position:relative; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,.14); box-shadow:0 10px 26px rgba(0,0,0,.25); }
+    .video-thumb { width:100%; height:100%; object-fit:cover; display:block; }
+    .video-thumb-wrap iframe { width:100%; height:100%; border:0; display:block; }
+    .video-play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,.22); transition: background .15s ease; }
+    .video-card:hover .video-play { background: rgba(0,0,0,.38); }
+    .video-play i { display:block; width:52px; height:52px; border-radius:50%; background: rgba(15,15,20,.6); position:relative; box-shadow:0 6px 16px rgba(0,0,0,.4); flex:0 0 auto; }
+    .video-play i::after { content:''; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%); border-style:solid; border-width:10px 0 10px 16px; border-color:transparent transparent transparent #fff; }
+    .video-title { margin-top:7px; font-size:12px; font-weight:800; color:#eaf4ff; line-height:1.4; }
     .odds-details summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); font-weight:900; font-size:13px; color:#eaf4ff; margin-bottom:10px; }
     .odds-details summary::-webkit-details-marker { display:none; }
     .odds-details summary::before { content:'▶'; font-size:10px; color:var(--accent2); transition: transform .18s ease; flex:0 0 auto; }
@@ -714,6 +724,15 @@
         <input type="text" id="tacticsSingleInput" maxlength="10" placeholder="選手名を入力" onfocus="pushHistory()" oninput="setTacticsName(TACTICS_STATE.selected, this.value)">
       </div>
       <div class="tactics-save-list" id="tacticsSaveList"></div>
+    </section>
+
+    <section class="section panel" aria-label="ハイライト動画">
+      <div class="section-title">
+        <h2>🎬 ハイライト動画</h2>
+        <span class="note">YouTubeのサムネイル一覧。タップで再生します。</span>
+      </div>
+      <div class="video-grid" id="videoGrid"></div>
+      <p class="note" id="videoEmptyNote" style="display:none">まだ動画が登録されていません。</p>
     </section>
   </main>
 
@@ -2287,6 +2306,42 @@ function attachMagnetDrag(el){
     el.addEventListener('pointercancel', up);
   });
 }
+/* ===== ハイライト動画（YouTube・URLを手動登録） =====
+   下の配列に YouTube の URL か動画IDを追加するだけで一覧に反映されます。
+   例:
+   { url: 'https://www.youtube.com/watch?v=XXXXXXXXXXX', title: 'M97 準々決勝ハイライト' },
+   { id: 'XXXXXXXXXXX', title: '大会公式ハイライト' },
+*/
+const YOUTUBE_VIDEOS = [
+];
+function parseYoutubeId(input){
+  if(!input) return null;
+  const m = String(input).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  if(m) return m[1];
+  if(/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+  return null;
+}
+function renderVideoGrid(){
+  const grid = document.getElementById('videoGrid');
+  const emptyNote = document.getElementById('videoEmptyNote');
+  if(!grid) return;
+  const videos = YOUTUBE_VIDEOS.map(v => ({ id: parseYoutubeId(v.id || v.url), title: v.title || '' })).filter(v => v.id);
+  if(!videos.length){ grid.innerHTML = ''; if(emptyNote) emptyNote.style.display = 'block'; return; }
+  if(emptyNote) emptyNote.style.display = 'none';
+  grid.innerHTML = videos.map(v => `<div class="video-card" data-id="${v.id}" onclick="playVideo(this)">
+    <div class="video-thumb-wrap">
+      <img class="video-thumb" src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="${htmlEscape(v.title)}" loading="lazy">
+      <span class="video-play"><i></i></span>
+    </div>
+    ${v.title ? `<div class="video-title">${htmlEscape(v.title)}</div>` : ''}
+  </div>`).join('');
+}
+function playVideo(el){
+  const id = el.dataset.id;
+  const wrap = el.querySelector('.video-thumb-wrap');
+  if(!wrap || wrap.querySelector('iframe')) return;
+  wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+}
 function nextTacticsSnapshotId(list){
   let id = Date.now();
   while(list.some(s => s.id === id)) id++; // 同一ミリ秒内の連続保存でもID衝突しないように
@@ -2614,6 +2669,7 @@ function init(){
   initBeta();
   initTactics();
   renderTacticsSaveList();
+  renderVideoGrid();
 
   const meSel = document.getElementById('meSelect');
   meSel.innerHTML = `<option value="">（指定なし）</option>` + USERS.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
