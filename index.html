@@ -335,6 +335,11 @@
     .grid-2 > .panel { min-width: 0; }
     .grid-3 { display:grid; grid-template-columns: minmax(0,1.25fr) minmax(300px,.75fr); gap:16px; }
     .table-wrap { overflow:auto; border-radius: 16px; border: 1px solid rgba(255,255,255,.10); }
+    .odds-details summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); font-weight:900; font-size:13px; color:#eaf4ff; margin-bottom:10px; }
+    .odds-details summary::-webkit-details-marker { display:none; }
+    .odds-details summary::before { content:'▶'; font-size:10px; color:var(--accent2); transition: transform .18s ease; flex:0 0 auto; }
+    .odds-details[open] summary::before { transform: rotate(90deg); }
+    .odds-details summary:hover { background: rgba(255,255,255,.09); }
     table { width: 100%; border-collapse: collapse; min-width: 680px; }
     th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,.10); white-space: nowrap; }
     th { color: #d9e8f7; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.05); }
@@ -625,13 +630,16 @@
           <h2>優勝オッズ表</h2>
           <span class="note">米国式 / 参考値</span>
         </div>
-        <div class="table-wrap">
-          <table aria-label="優勝オッズ表">
-            <thead><tr><th>順位</th><th>国</th><th>優勝オッズ</th><th>優勝確率</th><th>予想pt</th><th>持ち主</th></tr></thead>
-            <tbody id="oddsBody"></tbody>
-          </table>
-        </div>
-        <p class="note">オッズ・優勝確率・予想ptは、実力(Elo)とブラケットのモンテカルロ試算による参考値です（賭けの推奨ではありません）。「予想pt」＝期待勝利数＝1勝1点での期待ポイント。</p>
+        <details class="odds-details" id="oddsDetails">
+          <summary><span id="oddsSummaryText">優勝オッズ表を開く</span></summary>
+          <div class="table-wrap">
+            <table aria-label="優勝オッズ表">
+              <thead><tr><th>順位</th><th>国</th><th>優勝オッズ</th><th>優勝確率</th><th>予想pt</th><th>持ち主</th></tr></thead>
+              <tbody id="oddsBody"></tbody>
+            </table>
+          </div>
+          <p class="note">オッズ・優勝確率・予想ptは、実力(Elo)とブラケットのモンテカルロ試算による参考値です（賭けの推奨ではありません）。「予想pt」＝期待勝利数＝1勝1点での期待ポイント。</p>
+        </details>
       </div>
     </section>
 
@@ -1230,6 +1238,11 @@ function renderOdds(){
     const ownerHtml = owner ? `<span style="color:${owner.color};font-weight:900">${owner.name}</span>` : '<span class="note">—</span>';
     return `<tr><td>${o.rank}</td><td><span class="odds-team"><img class="flag-mini" src="${t.flag}" alt="${t.ja} 国旗">${t.ja}</span></td><td class="odds-num">${o.odds}</td><td>${o.prob}</td><td>${o.ev.toFixed(2)}</td><td>${ownerHtml}</td></tr>`;
   }).join('');
+  const summaryEl = document.getElementById('oddsSummaryText');
+  const top = ODDS[0];
+  if(summaryEl && top){
+    summaryEl.textContent = `優勝オッズ表を開く（全${ODDS.length}チーム・現在の本命: ${TEAMS[top.team].ja} ${top.odds}）`;
+  }
 }
 
 /* ===== トーナメント表 ===== */
