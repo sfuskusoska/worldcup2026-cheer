@@ -501,8 +501,8 @@
         <h1>W杯2026<br>応援ゲーム</h1>
         <p class="lead">岡・大・田・片・南の5人に30チームを6チームずつ配分。応援チームが試合に勝つたびに持ち主へ1ポイント入り、トーナメント表とリーダーボードに反映されます。配分はホスト設定固定で、ルーレットは遊び用に残しています。</p>
         <div class="status-strip">
-          <span class="pill" id="updatedAt">初期データ: 2026-06-29 11:52 JST</span>
-          <span class="pill">反映済み: カナダが南アフリカに1-0で勝利</span>
+          <span class="pill" id="updatedAt">初期データ: 2026-07-08 11:13 JST（ESPN反映・ラウンド32/ラウンド16まで確定）</span>
+          <span class="pill">反映済み: 準々決勝出場は フランス・モロッコ・ノルウェー・イングランド・スペイン・ベルギー・アルゼンチン・スイス</span>
         </div>
       </div>
       <div class="brand-box" title="FIFA World Cup 2026">
@@ -807,29 +807,29 @@ ALIASES.BRAZIL = 'BRA';
 
 const MATCHES = {
   m73:{num:73, round:'r32', label:'ラウンド32', utc:'2026-06-28T19:00:00Z', venue:'ロサンゼルス', slots:[{team:'RSA'}, {team:'CAN'}], status:'complete', score:{RSA:0,CAN:1}, winner:'CAN'},
-  m74:{num:74, round:'r32', label:'ラウンド32', utc:'2026-06-29T20:30:00Z', venue:'ボストン', slots:[{team:'GER'}, {team:'PAR'}]},
-  m75:{num:75, round:'r32', label:'ラウンド32', utc:'2026-06-30T01:00:00Z', venue:'モンテレイ', slots:[{team:'NED'}, {team:'MAR'}]},
-  m76:{num:76, round:'r32', label:'ラウンド32', utc:'2026-06-29T17:00:00Z', venue:'ヒューストン', slots:[{team:'BRA'}, {team:'JPN'}]},
-  m77:{num:77, round:'r32', label:'ラウンド32', utc:'2026-06-30T21:00:00Z', venue:'ニューヨーク・ニュージャージー', slots:[{team:'FRA'}, {team:'SWE'}]},
-  m78:{num:78, round:'r32', label:'ラウンド32', utc:'2026-06-30T17:00:00Z', venue:'ダラス', slots:[{team:'CIV'}, {team:'NOR'}]},
-  m79:{num:79, round:'r32', label:'ラウンド32', utc:'2026-07-01T01:00:00Z', venue:'メキシコシティ', slots:[{team:'MEX'}, {team:'ECU'}]},
-  m80:{num:80, round:'r32', label:'ラウンド32', utc:'2026-07-01T16:00:00Z', venue:'アトランタ', slots:[{team:'ENG'}, {team:'COD'}]},
-  m81:{num:81, round:'r32', label:'ラウンド32', utc:'2026-07-02T00:00:00Z', venue:'サンフランシスコ・ベイエリア', slots:[{team:'USA'}, {team:'BIH'}]},
-  m82:{num:82, round:'r32', label:'ラウンド32', utc:'2026-07-01T20:00:00Z', venue:'シアトル', slots:[{team:'BEL'}, {team:'SEN'}]},
-  m83:{num:83, round:'r32', label:'ラウンド32', utc:'2026-07-02T23:00:00Z', venue:'トロント', slots:[{team:'POR'}, {team:'CRO'}]},
-  m84:{num:84, round:'r32', label:'ラウンド32', utc:'2026-07-02T19:00:00Z', venue:'ロサンゼルス', slots:[{team:'ESP'}, {team:'AUT'}]},
-  m85:{num:85, round:'r32', label:'ラウンド32', utc:'2026-07-03T03:00:00Z', venue:'バンクーバー', slots:[{team:'SUI'}, {team:'DZA'}]},
-  m86:{num:86, round:'r32', label:'ラウンド32', utc:'2026-07-03T22:00:00Z', venue:'マイアミ', slots:[{team:'ARG'}, {team:'CPV'}]},
-  m87:{num:87, round:'r32', label:'ラウンド32', utc:'2026-07-04T01:30:00Z', venue:'カンザスシティ', slots:[{team:'COL'}, {team:'GHA'}]},
-  m88:{num:88, round:'r32', label:'ラウンド32', utc:'2026-07-03T18:00:00Z', venue:'ダラス', slots:[{team:'AUS'}, {team:'EGY'}]},
-  m89:{num:89, round:'r16', label:'ラウンド16', utc:'2026-07-04T21:00:00Z', venue:'フィラデルフィア', slots:[{winnerOf:'m74'}, {winnerOf:'m77'}]},
-  m90:{num:90, round:'r16', label:'ラウンド16', utc:'2026-07-04T17:00:00Z', venue:'ヒューストン', slots:[{winnerOf:'m73'}, {winnerOf:'m75'}]},
-  m91:{num:91, round:'r16', label:'ラウンド16', utc:'2026-07-05T20:00:00Z', venue:'ニューヨーク・ニュージャージー', slots:[{winnerOf:'m76'}, {winnerOf:'m78'}]},
-  m92:{num:92, round:'r16', label:'ラウンド16', utc:'2026-07-06T00:00:00Z', venue:'メキシコシティ', slots:[{winnerOf:'m79'}, {winnerOf:'m80'}]},
-  m93:{num:93, round:'r16', label:'ラウンド16', utc:'2026-07-06T19:00:00Z', venue:'ダラス', slots:[{winnerOf:'m83'}, {winnerOf:'m84'}]},
-  m94:{num:94, round:'r16', label:'ラウンド16', utc:'2026-07-07T00:00:00Z', venue:'シアトル', slots:[{winnerOf:'m81'}, {winnerOf:'m82'}]},
-  m95:{num:95, round:'r16', label:'ラウンド16', utc:'2026-07-07T16:00:00Z', venue:'アトランタ', slots:[{winnerOf:'m86'}, {winnerOf:'m88'}]},
-  m96:{num:96, round:'r16', label:'ラウンド16', utc:'2026-07-07T20:00:00Z', venue:'バンクーバー', slots:[{winnerOf:'m85'}, {winnerOf:'m87'}]},
+  m74:{num:74, round:'r32', label:'ラウンド32', utc:'2026-06-29T20:30:00Z', venue:'ボストン', slots:[{team:'GER'}, {team:'PAR'}], status:'complete', score:{GER:1,PAR:1}, winner:'PAR'},
+  m75:{num:75, round:'r32', label:'ラウンド32', utc:'2026-06-30T01:00:00Z', venue:'モンテレイ', slots:[{team:'NED'}, {team:'MAR'}], status:'complete', score:{NED:1,MAR:1}, winner:'MAR'},
+  m76:{num:76, round:'r32', label:'ラウンド32', utc:'2026-06-29T17:00:00Z', venue:'ヒューストン', slots:[{team:'BRA'}, {team:'JPN'}], status:'complete', score:{BRA:2,JPN:1}, winner:'BRA'},
+  m77:{num:77, round:'r32', label:'ラウンド32', utc:'2026-06-30T21:00:00Z', venue:'ニューヨーク・ニュージャージー', slots:[{team:'FRA'}, {team:'SWE'}], status:'complete', score:{FRA:3,SWE:0}, winner:'FRA'},
+  m78:{num:78, round:'r32', label:'ラウンド32', utc:'2026-06-30T17:00:00Z', venue:'ダラス', slots:[{team:'CIV'}, {team:'NOR'}], status:'complete', score:{CIV:1,NOR:2}, winner:'NOR'},
+  m79:{num:79, round:'r32', label:'ラウンド32', utc:'2026-07-01T01:00:00Z', venue:'メキシコシティ', slots:[{team:'MEX'}, {team:'ECU'}], status:'complete', score:{MEX:2,ECU:0}, winner:'MEX'},
+  m80:{num:80, round:'r32', label:'ラウンド32', utc:'2026-07-01T16:00:00Z', venue:'アトランタ', slots:[{team:'ENG'}, {team:'COD'}], status:'complete', score:{ENG:2,COD:1}, winner:'ENG'},
+  m81:{num:81, round:'r32', label:'ラウンド32', utc:'2026-07-02T00:00:00Z', venue:'サンフランシスコ・ベイエリア', slots:[{team:'USA'}, {team:'BIH'}], status:'complete', score:{USA:2,BIH:0}, winner:'USA'},
+  m82:{num:82, round:'r32', label:'ラウンド32', utc:'2026-07-01T20:00:00Z', venue:'シアトル', slots:[{team:'BEL'}, {team:'SEN'}], status:'complete', score:{BEL:3,SEN:2}, winner:'BEL'},
+  m83:{num:83, round:'r32', label:'ラウンド32', utc:'2026-07-02T23:00:00Z', venue:'トロント', slots:[{team:'POR'}, {team:'CRO'}], status:'complete', score:{POR:2,CRO:1}, winner:'POR'},
+  m84:{num:84, round:'r32', label:'ラウンド32', utc:'2026-07-02T19:00:00Z', venue:'ロサンゼルス', slots:[{team:'ESP'}, {team:'AUT'}], status:'complete', score:{ESP:3,AUT:0}, winner:'ESP'},
+  m85:{num:85, round:'r32', label:'ラウンド32', utc:'2026-07-03T03:00:00Z', venue:'バンクーバー', slots:[{team:'SUI'}, {team:'DZA'}], status:'complete', score:{SUI:2,DZA:0}, winner:'SUI'},
+  m86:{num:86, round:'r32', label:'ラウンド32', utc:'2026-07-03T22:00:00Z', venue:'マイアミ', slots:[{team:'ARG'}, {team:'CPV'}], status:'complete', score:{ARG:3,CPV:2}, winner:'ARG'},
+  m87:{num:87, round:'r32', label:'ラウンド32', utc:'2026-07-04T01:30:00Z', venue:'カンザスシティ', slots:[{team:'COL'}, {team:'GHA'}], status:'complete', score:{COL:1,GHA:0}, winner:'COL'},
+  m88:{num:88, round:'r32', label:'ラウンド32', utc:'2026-07-03T18:00:00Z', venue:'ダラス', slots:[{team:'AUS'}, {team:'EGY'}], status:'complete', score:{AUS:1,EGY:1}, winner:'EGY'},
+  m89:{num:89, round:'r16', label:'ラウンド16', utc:'2026-07-04T21:00:00Z', venue:'フィラデルフィア', slots:[{winnerOf:'m74'}, {winnerOf:'m77'}], status:'complete', score:{PAR:0,FRA:1}, winner:'FRA'},
+  m90:{num:90, round:'r16', label:'ラウンド16', utc:'2026-07-04T17:00:00Z', venue:'ヒューストン', slots:[{winnerOf:'m73'}, {winnerOf:'m75'}], status:'complete', score:{CAN:0,MAR:3}, winner:'MAR'},
+  m91:{num:91, round:'r16', label:'ラウンド16', utc:'2026-07-05T20:00:00Z', venue:'ニューヨーク・ニュージャージー', slots:[{winnerOf:'m76'}, {winnerOf:'m78'}], status:'complete', score:{BRA:1,NOR:2}, winner:'NOR'},
+  m92:{num:92, round:'r16', label:'ラウンド16', utc:'2026-07-06T00:00:00Z', venue:'メキシコシティ', slots:[{winnerOf:'m79'}, {winnerOf:'m80'}], status:'complete', score:{MEX:2,ENG:3}, winner:'ENG'},
+  m93:{num:93, round:'r16', label:'ラウンド16', utc:'2026-07-06T19:00:00Z', venue:'ダラス', slots:[{winnerOf:'m83'}, {winnerOf:'m84'}], status:'complete', score:{POR:0,ESP:1}, winner:'ESP'},
+  m94:{num:94, round:'r16', label:'ラウンド16', utc:'2026-07-07T00:00:00Z', venue:'シアトル', slots:[{winnerOf:'m81'}, {winnerOf:'m82'}], status:'complete', score:{USA:1,BEL:4}, winner:'BEL'},
+  m95:{num:95, round:'r16', label:'ラウンド16', utc:'2026-07-07T16:00:00Z', venue:'アトランタ', slots:[{winnerOf:'m86'}, {winnerOf:'m88'}], status:'complete', score:{ARG:3,EGY:2}, winner:'ARG'},
+  m96:{num:96, round:'r16', label:'ラウンド16', utc:'2026-07-07T20:00:00Z', venue:'バンクーバー', slots:[{winnerOf:'m85'}, {winnerOf:'m87'}], status:'complete', score:{SUI:0,COL:0}, winner:'SUI'},
   m97:{num:97, round:'qf', label:'準々決勝', utc:'2026-07-09T20:00:00Z', venue:'ボストン', slots:[{winnerOf:'m89'}, {winnerOf:'m90'}]},
   m98:{num:98, round:'qf', label:'準々決勝', utc:'2026-07-10T19:00:00Z', venue:'ロサンゼルス', slots:[{winnerOf:'m93'}, {winnerOf:'m94'}]},
   m99:{num:99, round:'qf', label:'準々決勝', utc:'2026-07-11T21:00:00Z', venue:'マイアミ', slots:[{winnerOf:'m91'}, {winnerOf:'m92'}]},
@@ -1364,9 +1364,18 @@ function renderChampion(){
   const t = TEAMS[winner];
   box.innerHTML = `<img src="${t.flag}" alt="${t.ja} 国旗"><span>${t.ja}</span>`;
 }
+function pickRecentMatchIds(count){
+  const now = Date.now();
+  return Object.keys(MATCHES)
+    .map(id => ({ id, diff: Math.abs(new Date(MATCHES[id].utc).getTime() - now) }))
+    .sort((a,b) => a.diff - b.diff)
+    .slice(0, count)
+    .map(x => x.id)
+    .sort((a,b) => new Date(MATCHES[a].utc) - new Date(MATCHES[b].utc));
+}
 function renderMiniSchedule(){
   const target = document.getElementById('miniSchedule');
-  const ids = ['m73','m76','m74','m75','m78','m77','m79','m80'];
+  const ids = pickRecentMatchIds(8); // 「今」に最も近い直近の結果／今後の試合を動的に選ぶ（固定リストにしない）
   target.innerHTML = ids.map(id => {
     const m = MATCHES[id];
     const teams = getParticipants(id).map(t => t ? TEAMS[t].ja : '未定').join(' vs ');
