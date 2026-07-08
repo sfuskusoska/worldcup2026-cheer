@@ -345,6 +345,11 @@
     .video-play i { display:block; width:52px; height:52px; border-radius:50%; background: rgba(15,15,20,.6); position:relative; box-shadow:0 6px 16px rgba(0,0,0,.4); flex:0 0 auto; }
     .video-play i::after { content:''; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%); border-style:solid; border-width:10px 0 10px 16px; border-color:transparent transparent transparent #fff; }
     .video-title { margin-top:7px; font-size:12px; font-weight:800; color:#eaf4ff; line-height:1.4; }
+    .sub-label { font-size:11px; font-weight:900; color: var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:14px 0 8px; }
+    .video-grid:first-of-type ~ .sub-label:first-of-type { margin-top:14px; }
+    .x-post-grid { display:flex; flex-wrap:wrap; gap:14px; }
+    .x-post-grid:empty { display:none; }
+    .x-post-grid .twitter-tweet { margin:0 !important; }
     .odds-details summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); font-weight:900; font-size:13px; color:#eaf4ff; margin-bottom:10px; }
     .odds-details summary::-webkit-details-marker { display:none; }
     .odds-details summary::before { content:'▶'; font-size:10px; color:var(--accent2); transition: transform .18s ease; flex:0 0 auto; }
@@ -729,9 +734,12 @@
     <section class="section panel" aria-label="おすすめ動画">
       <div class="section-title">
         <h2>🎬 おすすめ動画</h2>
-        <span class="note">YouTubeのサムネイル一覧。タップで再生します。</span>
+        <span class="note">YouTube・Xの動画をまとめて掲載。タップで再生します。</span>
       </div>
+      <div class="sub-label" id="videoGridLabel" style="display:none">YouTube</div>
       <div class="video-grid" id="videoGrid"></div>
+      <div class="sub-label" id="xPostGridLabel" style="display:none">X（旧Twitter）</div>
+      <div class="x-post-grid" id="xPostGrid"></div>
       <p class="note" id="videoEmptyNote" style="display:none">まだ動画が登録されていません。</p>
     </section>
   </main>
@@ -2306,13 +2314,18 @@ function attachMagnetDrag(el){
     el.addEventListener('pointercancel', up);
   });
 }
-/* ===== おすすめ動画（YouTube・URLを手動登録） =====
+/* ===== おすすめ動画（YouTube・X／旧Twitter・URLを手動登録） =====
    下の配列に YouTube の URL か動画IDを追加するだけで一覧に反映されます。
    例:
    { url: 'https://www.youtube.com/watch?v=XXXXXXXXXXX', title: 'M97 準々決勝ハイライト' },
    { id: 'XXXXXXXXXXX', title: '大会公式ハイライト' },
 */
 const YOUTUBE_VIDEOS = [
+];
+/* X（旧Twitter）の投稿URLを並べるだけ。X公式の埋め込みスクリプトでカード表示されます。
+   例: 'https://x.com/example_user/status/1234567890123456789',
+*/
+const X_POSTS = [
 ];
 function parseYoutubeId(input){
   if(!input) return null;
@@ -2321,13 +2334,29 @@ function parseYoutubeId(input){
   if(/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
   return null;
 }
+function extractXStatusUrl(input){
+  if(!input) return null;
+  const s = String(input).trim();
+  return /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/[^\/?#]+\/status\/\d+/i.test(s) ? s : null;
+}
+let twitterWidgetsPromise = null;
+function loadTwitterWidgetsScript(){
+  if(window.twttr && window.twttr.widgets) return Promise.resolve();
+  if(twitterWidgetsPromise) return twitterWidgetsPromise;
+  twitterWidgetsPromise = new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://platform.twitter.com/widgets.js';
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => resolve(); // 読み込めなくてもページは壊さない
+    document.body.appendChild(s);
+  });
+  return twitterWidgetsPromise;
+}
 function renderVideoGrid(){
   const grid = document.getElementById('videoGrid');
-  const emptyNote = document.getElementById('videoEmptyNote');
-  if(!grid) return;
+  if(!grid) return 0;
   const videos = YOUTUBE_VIDEOS.map(v => ({ id: parseYoutubeId(v.id || v.url), title: v.title || '' })).filter(v => v.id);
-  if(!videos.length){ grid.innerHTML = ''; if(emptyNote) emptyNote.style.display = 'block'; return; }
-  if(emptyNote) emptyNote.style.display = 'none';
   grid.innerHTML = videos.map(v => `<div class="video-card" data-id="${v.id}" onclick="playVideo(this)">
     <div class="video-thumb-wrap">
       <img class="video-thumb" src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="${htmlEscape(v.title)}" loading="lazy">
@@ -2335,12 +2364,32 @@ function renderVideoGrid(){
     </div>
     ${v.title ? `<div class="video-title">${htmlEscape(v.title)}</div>` : ''}
   </div>`).join('');
+  return videos.length;
 }
 function playVideo(el){
   const id = el.dataset.id;
   const wrap = el.querySelector('.video-thumb-wrap');
   if(!wrap || wrap.querySelector('iframe')) return;
   wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+}
+function renderXPosts(){
+  const grid = document.getElementById('xPostGrid');
+  if(!grid) return 0;
+  const urls = X_POSTS.map(extractXStatusUrl).filter(Boolean);
+  grid.innerHTML = urls.map(u => `<blockquote class="twitter-tweet" data-theme="dark"><a href="${htmlEscape(u)}"></a></blockquote>`).join('');
+  if(urls.length){ loadTwitterWidgetsScript().then(() => { try { window.twttr.widgets.load(grid); } catch(e) {} }); }
+  return urls.length;
+}
+function renderRecommendedVideos(){
+  const ytCount = renderVideoGrid();
+  const xCount = renderXPosts();
+  const emptyNote = document.getElementById('videoEmptyNote');
+  const ytLabel = document.getElementById('videoGridLabel');
+  const xLabel = document.getElementById('xPostGridLabel');
+  const bothPresent = ytCount > 0 && xCount > 0;
+  if(ytLabel) ytLabel.style.display = (ytCount > 0 && bothPresent) ? 'block' : 'none';
+  if(xLabel) xLabel.style.display = (xCount > 0 && bothPresent) ? 'block' : 'none';
+  if(emptyNote) emptyNote.style.display = (ytCount === 0 && xCount === 0) ? 'block' : 'none';
 }
 function nextTacticsSnapshotId(list){
   let id = Date.now();
@@ -2669,7 +2718,7 @@ function init(){
   initBeta();
   initTactics();
   renderTacticsSaveList();
-  renderVideoGrid();
+  renderRecommendedVideos();
 
   const meSel = document.getElementById('meSelect');
   meSel.innerHTML = `<option value="">（指定なし）</option>` + USERS.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
